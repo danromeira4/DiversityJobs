@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "rp2"
+package-mode = false
+version = "0.1.0"
+description = "Python Backend for RP2 project"
+authors = ["Rafael Moraes"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.11"
+requests = "^2.32.3"
+pandas = "^2.2.3"
+fastapi = "^0.115.4"
+uvicorn = "^0.32.0"
+pydantic = "^2.9.2"
+aider-chat = "^0.62.1"
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.5"
+requests = "^2.32.3"
+pandas = "^2.2.3"
+fastapi = "^0.115.4"
+uvicorn = "^0.32.0"
+pydantic = "^2.9.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

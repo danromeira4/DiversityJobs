@@ -1,0 +1,113 @@
+## Backend
+
+O backend do DiversityJobs é construído com FastAPI, fornecendo APIs RESTful para gerenciar usuários, vagas e aplicações. Abaixo está uma visão geral dos principais arquivos do backend e instruções sobre como configurar e executar a aplicação.
+
+### Arquivos
+
+#### app.py
+
+`app.py` serve como o ponto de entrada principal para a aplicação backend. Define vários endpoints de API para lidar com operações relacionadas a candidatos, empresas, vagas e aplicações. O arquivo utiliza FastAPI para criar a API e SQLite para o banco de dados.
+
+**Principais Funcionalidades:**
+- Define endpoints de API para operações CRUD em usuários, vagas e aplicações.
+- Gerencia conexões com o banco de dados e executa consultas SQL.
+- Utiliza modelos Pydantic para validação e serialização de dados.
+
+#### generate_db.py
+
+`generate_db.py` é responsável por configurar o banco de dados SQLite para o backend. Ele lê o esquema do banco de dados a partir de `diversityjobs_schema.sql`, converte a sintaxe para compatível com SQLite e popula o banco de dados com dados de exemplo para fins de teste.
+
+**Principais Funcionalidades:**
+- Cria tabelas de banco de dados com base no esquema fornecido.
+- Insere dados de exemplo nas tabelas de Usuários, Currículos, Vagas e Aplicações.
+- Converte sintaxe SQL específica do MySQL para SQLite.
+
+#### test.py
+
+`test.py` contém testes automatizados para os endpoints de API do backend. Utiliza a biblioteca `requests` para enviar requisições HTTP à API e verifica as respostas para garantir que os endpoints estão funcionando conforme o esperado.
+
+**Principais Funcionalidades:**
+- Define casos de teste para recursos existentes e não existentes.
+- Imprime resultados de testes formatados e resumos.
+- Encerra com um código de status diferente de zero se algum teste falhar.
+
+### Configuração e Instalação
+
+O backend utiliza [Poetry](https://python-poetry.org/) para gerenciamento de dependências e empacotamento.
+
+#### Pré-requisitos
+
+- Python 3.8 ou superior
+- Poetry
+
+#### Instalando Dependências
+
+1. **Navegue até o Diretório Backend:**
+
+   ```bash
+   cd v2/DiversityJobs-main/backend
+   ```
+
+2. **Instale o Poetry** (se ainda não estiver instalado):
+
+   ```bash
+   curl -sSL https://install.python-poetry.org | python3 -
+   ```
+
+   Alternativamente, siga o [guia oficial de instalação do Poetry](https://python-poetry.org/docs/#installation) para outras opções de instalação.
+
+3. **Instale as Dependências do Projeto:**
+
+   ```bash
+   poetry install
+   ```
+
+#### Executando o Servidor Backend
+
+1. **Ative o Ambiente do Poetry:**
+
+   ```bash
+   poetry shell
+   ```
+
+2. **Execute a Aplicação FastAPI:**
+
+   ```bash
+   uvicorn app:app --reload
+   ```
+
+   O servidor backend será iniciado em `http://localhost:8000`. A flag `--reload` permite recarregamento automático quando alterações no código forem detectadas.
+
+#### Populando o Banco de Dados
+
+1. **Execute o Script de Geração do Banco de Dados:**
+
+   ```bash
+   python generate_db.py
+   ```
+
+   Este script criará e populá o banco de dados SQLite `diversityjobs.db` com dados de exemplo.
+
+#### Executando os Testes
+
+1. **Certifique-se de que o Servidor Backend está Rodando:**
+
+   ```bash
+   uvicorn app:app --reload
+   ```
+
+2. **Em um Novo Terminal, Navegue até o Diretório Backend e Ative o Ambiente do Poetry:**
+
+   ```bash
+   cd v2/DiversityJobs-main/backend
+   poetry shell
+   ```
+
+3. **Execute o Script de Testes:**
+
+   ```bash
+   python test.py
+   ```
+
+   Isso executará os casos de teste definidos e exibirá os resultados, indicando se os endpoints estão funcionando corretamente.
+
