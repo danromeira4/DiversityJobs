@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,73 +14,38 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 
-// Dados simulados para as vagas da empresa
-const vagasEmpresa = [
-  {
-    id: 1,
-    titulo: "Engenheiro de Software Senior",
-    localizacao: "São Paulo, SP",
-    dataCriacao: "2024-03-01",
-    status: "Aberta",
-    tipo: "Tempo integral",
-    candidatos: 15,
-  },
-  {
-    id: 2,
-    titulo: "Designer UX/UI",
-    localizacao: "Remoto",
-    dataCriacao: "2024-02-28",
-    status: "Em revisão",
-    tipo: "Contrato",
-    candidatos: 8,
-  },
-  {
-    id: 3,
-    titulo: "Analista de Dados",
-    localizacao: "Rio de Janeiro, RJ",
-    dataCriacao: "2024-02-25",
-    status: "Fechada",
-    tipo: "Tempo integral",
-    candidatos: 20,
-  },
-  {
-    id: 4,
-    titulo: "Gerente de Produto",
-    localizacao: "Belo Horizonte, MG",
-    dataCriacao: "2024-03-02",
-    status: "Aberta",
-    tipo: "Tempo integral",
-    candidatos: 5,
-  },
-  {
-    id: 5,
-    titulo: "Desenvolvedor Frontend",
-    localizacao: "São Paulo, SP",
-    dataCriacao: "2024-02-20",
-    status: "Em revisão",
-    tipo: "Estágio",
-    candidatos: 12,
-  },
-]
-
 export default function DashboardEmpresa() {
   const [filtroStatus, setFiltroStatus] = useState("todos")
+  const [vagasEmpresa, setVagasEmpresa] = useState([])
+  const [businessEmail, setBusinessEmail] = useState("business@example.com")
   const [novaVaga, setNovaVaga] = useState({
-    titulo: "",
-    descricao: "",
-    localizacao: "",
-    faixaSalarial: "",
-    requisitos: "",
-    prazo: "",
-    metodoAplicacao: "",
-    tiposDeficiencia: {
-      fisica: false,
-      visual: false,
-      auditiva: false,
-      intelectual: false,
-      multipla: false,
-    },
+    business_email: "business@example.com", // Changed from business_id to business_email
+    job_title: "",
+    job_description: "",
+    location: "",
+    salary_range: "",
+    requirements: "",
+    application_deadline: "",
+    application_process: "",
+    disability_type: "",
+    posted_date: new Date().toISOString().split('T')[0]
   })
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const response = await fetch(`http://localhost:8000/businesses/${businessEmail}/jobs`)
+        if (response.ok) {
+          const jobs = await response.json()
+          setVagasEmpresa(jobs)
+        }
+      } catch (error) {
+        console.error('Error fetching jobs:', error)
+      }
+    }
+
+    fetchJobs()
+  }, [businessEmail])
 
   const vagasFiltradas = vagasEmpresa.filter(vaga => 
     filtroStatus === "todos" || vaga.status === filtroStatus
@@ -104,61 +69,68 @@ export default function DashboardEmpresa() {
     setNovaVaga(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleCheckboxChange = (name: string) => {
+  const handleCheckboxChange = (type: string) => {
     setNovaVaga(prev => ({
       ...prev,
-      tiposDeficiencia: {
-        ...prev.tiposDeficiencia,
-        [name]: !prev.tiposDeficiencia[name as keyof typeof prev.tiposDeficiencia],
-      },
+      disability_type: type
     }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Aqui você faria a chamada para o backend Python
-    // Exemplo de como seria a chamada usando fetch:
-    /*
+    
+    // Update business_email before submitting
+    const jobData = {
+      ...novaVaga,
+      business_email: businessEmail
+    }
+    
     try {
-      const response = await fetch('/api/criar-vaga', {
+      const response = await fetch('http://localhost:8000/jobs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...novaVaga,
-          companyId: 'ID_DA_EMPRESA', // Este valor seria dinâmico baseado na empresa logada
-          dataCriacao: new Date().toISOString(),
-        }),
-      });
+        body: JSON.stringify(jobData),
+      })
+
       if (response.ok) {
-        // Atualizar o estado local ou recarregar os dados
-        console.log('Vaga criada com sucesso!');
+        try {
+          // Refresh jobs list
+          const jobsResponse = await fetch(`http://localhost:8000/businesses/${businessEmail}/jobs`)
+          if (!jobsResponse.ok) {
+            throw new Error(`Failed to fetch jobs: ${jobsResponse.status} ${jobsResponse.statusText}`)
+          }
+          const jobs = await jobsResponse.json()
+          setVagasEmpresa(jobs)
+
+          // Reset form
+          setNovaVaga({
+            business_email: businessEmail,
+            job_title: "",
+            job_description: "", 
+            location: "",
+            salary_range: "",
+            requirements: "",
+            application_deadline: "",
+            application_process: "",
+            disability_type: "",
+            posted_date: new Date().toISOString().split('T')[0]
+          })
+        } catch (error) {
+          console.error('Error refreshing jobs list:', error)
+        }
       } else {
-        console.error('Erro ao criar vaga');
+        const errorData = await response.json().catch(() => null)
+        console.error('Error creating job:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        })
       }
     } catch (error) {
-      console.error('Erro ao enviar dados:', error);
+      console.error('Error:', error)
     }
-    */
-    console.log('Dados da nova vaga:', novaVaga)
-    // Resetar o formulário após o envio
-    setNovaVaga({
-      titulo: "",
-      descricao: "",
-      localizacao: "",
-      faixaSalarial: "",
-      requisitos: "",
-      prazo: "",
-      metodoAplicacao: "",
-      tiposDeficiencia: {
-        fisica: false,
-        visual: false,
-        auditiva: false,
-        intelectual: false,
-        multipla: false,
-      },
-    })
   }
 
   return (
@@ -187,9 +159,21 @@ export default function DashboardEmpresa() {
         <section className="w-full py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6">
             <div className="flex justify-between items-center mb-8">
-              <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
-                Dashboard de Vagas
-              </h1>
+              <div className="flex items-center gap-4">
+                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
+                  Dashboard de Vagas
+                </h1>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="email-input">Email da Empresa:</Label>
+                  <Input
+                    id="email-input"
+                    type="email"
+                    value={businessEmail}
+                    onChange={(e) => setBusinessEmail(e.target.value)}
+                    className="w-[300px]"
+                  />
+                </div>
+              </div>
               <Dialog>
                 <DialogTrigger asChild>
                   <Button>
@@ -202,72 +186,81 @@ export default function DashboardEmpresa() {
                   </DialogHeader>
                   <form onSubmit={handleSubmit} className="space-y-4 grid grid-cols-2 gap-4">
                     <div className="col-span-2">
-                      <Label htmlFor="titulo">Título da Vaga</Label>
+                      <Label htmlFor="business_email">Email da Empresa</Label>
                       <Input
-                        id="titulo"
-                        name="titulo"
-                        value={novaVaga.titulo}
+                        id="business_email"
+                        value={businessEmail}
+                        onChange={(e) => setBusinessEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="job_title">Título da Vaga</Label>
+                      <Input
+                        id="job_title"
+                        name="job_title"
+                        value={novaVaga.job_title}
                         onChange={handleInputChange}
                         required
                       />
                     </div>
                     <div className="col-span-2">
-                      <Label htmlFor="descricao">Descrição da Vaga</Label>
+                      <Label htmlFor="job_description">Descrição da Vaga</Label>
                       <Textarea
-                        id="descricao"
-                        name="descricao"
-                        value={novaVaga.descricao}
+                        id="job_description"
+                        name="job_description"
+                        value={novaVaga.job_description}
                         onChange={handleInputChange}
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="localizacao">Localização</Label>
+                      <Label htmlFor="location">Localização</Label>
                       <Input
-                        id="localizacao"
-                        name="localizacao"
-                        value={novaVaga.localizacao}
+                        id="location"
+                        name="location"
+                        value={novaVaga.location}
                         onChange={handleInputChange}
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="faixaSalarial">Faixa Salarial</Label>
+                      <Label htmlFor="salary_range">Faixa Salarial</Label>
                       <Input
-                        id="faixaSalarial"
-                        name="faixaSalarial"
-                        value={novaVaga.faixaSalarial}
+                        id="salary_range"
+                        name="salary_range"
+                        value={novaVaga.salary_range}
                         onChange={handleInputChange}
                         required
                       />
                     </div>
                     <div className="col-span-2">
-                      <Label htmlFor="requisitos">Requisitos</Label>
+                      <Label htmlFor="requirements">Requisitos</Label>
                       <Textarea
-                        id="requisitos"
-                        name="requisitos"
-                        value={novaVaga.requisitos}
+                        id="requirements"
+                        name="requirements"
+                        value={novaVaga.requirements}
                         onChange={handleInputChange}
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="prazo">Prazo de Inscrição</Label>
+                      <Label htmlFor="application_deadline">Prazo de Inscrição</Label>
                       <Input
-                        id="prazo"
-                        name="prazo"
+                        id="application_deadline"
+                        name="application_deadline"
                         type="date"
-                        value={novaVaga.prazo}
+                        value={novaVaga.application_deadline}
                         onChange={handleInputChange}
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="metodoAplicacao">Método de Aplicação</Label>
+                      <Label htmlFor="application_process">Método de Aplicação</Label>
                       <Input
-                        id="metodoAplicacao"
-                        name="metodoAplicacao"
-                        value={novaVaga.metodoAplicacao}
+                        id="application_process"
+                        name="application_process"
+                        value={novaVaga.application_process}
                         onChange={handleInputChange}
                         required
                       />
@@ -275,14 +268,14 @@ export default function DashboardEmpresa() {
                     <div className="col-span-2">
                       <Label>Tipos de Deficiência</Label>
                       <div className="grid grid-cols-3 gap-2">
-                        {Object.entries(novaVaga.tiposDeficiencia).map(([key, value]) => (
-                          <div key={key} className="flex items-center space-x-2">
+                        {['fisica', 'visual', 'auditiva', 'intelectual', 'multipla'].map((type) => (
+                          <div key={type} className="flex items-center space-x-2">
                             <Checkbox
-                              id={key}
-                              checked={value}
-                              onCheckedChange={() => handleCheckboxChange(key)}
+                              id={type}
+                              checked={novaVaga.disability_type === type}
+                              onCheckedChange={() => handleCheckboxChange(type)}
                             />
-                            <Label htmlFor={key}>{key.charAt(0).toUpperCase() + key.slice(1)}</Label>
+                            <Label htmlFor={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</Label>
                           </div>
                         ))}
                       </div>
@@ -318,39 +311,32 @@ export default function DashboardEmpresa() {
                       <TableHead>Localização</TableHead>
                       <TableHead>Data de Criação</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Candidatos</TableHead>
                       <TableHead>Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {vagasFiltradas.map((vaga) => (
-                      <TableRow key={vaga.id}>
+                      <TableRow key={vaga.job_id}>
                         <TableCell>
-                          <div className="font-medium">{vaga.titulo}</div>
-                          <div className="text-sm text-gray-500">{vaga.tipo}</div>
+                          <div className="font-medium">{vaga.job_title}</div>
+                          <div className="text-sm text-gray-500">{vaga.job_type}</div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center">
                             <MapPin className="mr-2 h-4 w-4 text-gray-500" />
-                            {vaga.localizacao}
+                            {vaga.location}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center">
                             <Calendar className="mr-2 h-4 w-4 text-gray-500" />
-                            {new Date(vaga.dataCriacao).toLocaleDateString('pt-BR')}
+                            {new Date(vaga.posted_date).toLocaleDateString('pt-BR')}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={getStatusColor(vaga.status)}>
-                            {vaga.status}
+                          <Badge className={getStatusColor(vaga.status || 'Aberta')}>
+                            {vaga.status || 'Aberta'}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <Briefcase className="mr-2 h-4 w-4 text-gray-500" />
-                            {vaga.candidatos}
-                          </div>
                         </TableCell>
                         <TableCell>
                           <Button variant="ghost" size="sm">Editar</Button>

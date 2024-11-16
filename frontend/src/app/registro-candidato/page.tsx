@@ -8,25 +8,54 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Briefcase, Mail, Phone, MapPin, Linkedin, Calendar, GraduationCap, Plus, Trash2 } from "lucide-react"
+import { Briefcase, Mail, Phone, MapPin, Linkedin, Calendar, GraduationCap, Plus, Trash2, Lock } from "lucide-react"
+import { useRouter } from 'next/navigation'
 
 export default function PerfilCandidato() {
+  const router = useRouter()
+  const [formData, setFormData] = useState({
+    nome: '',
+    email: '',
+    senha: '',
+    telefone: '',
+    localizacao: '',
+    linkedin: '',
+    grupoSocial: '',
+    resumoProfissional: '',
+    habilidades: [] as string[]
+  })
+
   const [experiencias, setExperiencias] = useState([
-    { id: 1, cargo: 'Desenvolvedor Full Stack', empresa: 'TechBrasil', periodo: 'Jan 2020 - Presente', descricao: 'Desenvolvimento de aplicações web utilizando React e Node.js.' },
-    { id: 2, cargo: 'Desenvolvedor Front-end', empresa: 'WebSolutions', periodo: 'Mar 2018 - Dez 2019', descricao: 'Criação de interfaces responsivas e acessíveis com HTML, CSS e JavaScript.' }
+    { id: 1, tempo: 'Jan 2020 - Presente', empresa: 'TechBrasil' },
+    { id: 2, tempo: 'Mar 2018 - Dez 2019', empresa: 'WebSolutions' }
   ])
 
   const [formacoes, setFormacoes] = useState([
-    { id: 1, curso: 'Ciência da Computação', instituicao: 'Universidade Federal de São Paulo', ano: '2018' },
-    { id: 2, curso: 'MBA em Gestão de Projetos', instituicao: 'FGV', ano: '2021' }
+    { id: 1, tempo: '2018', instituicao: 'Universidade Federal de São Paulo' },
+    { id: 2, tempo: '2021', instituicao: 'FGV' }
   ])
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [id]: value
+    }))
+  }
+
+  const handleSelectChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      grupoSocial: value
+    }))
+  }
+
   const adicionarExperiencia = () => {
-    setExperiencias([...experiencias, { id: Date.now(), cargo: '', empresa: '', periodo: '', descricao: '' }])
+    setExperiencias([...experiencias, { id: Date.now(), tempo: '', empresa: '' }])
   }
 
   const adicionarFormacao = () => {
-    setFormacoes([...formacoes, { id: Date.now(), curso: '', instituicao: '', ano: '' }])
+    setFormacoes([...formacoes, { id: Date.now(), tempo: '', instituicao: '' }])
   }
 
   const removerExperiencia = (id: number) => {
@@ -35,6 +64,54 @@ export default function PerfilCandidato() {
 
   const removerFormacao = (id: number) => {
     setFormacoes(formacoes.filter(form => form.id !== id))
+  }
+
+  const handleSubmit = async () => {
+    const habilidadesList = formData.habilidades.length ? 
+      formData.habilidades : 
+      formData.habilidades.toString().split(',').map(skill => skill.trim())
+
+    const payload = {
+      nome: formData.nome,
+      email: formData.email,
+      senha: formData.senha,
+      telefone: formData.telefone,
+      localizacao: formData.localizacao,
+      linkedin: formData.linkedin,
+      grupoSocial: formData.grupoSocial,
+      resumoProfissional: formData.resumoProfissional,
+      experiencias: experiencias.map(exp => ({
+        tempo: exp.tempo,
+        empresa: exp.empresa
+      })),
+      formacoes: formacoes.map(form => ({
+        tempo: form.tempo,
+        instituicao: form.instituicao
+      })),
+      habilidades: habilidadesList
+    }
+    try {
+      const response = await fetch('http://localhost:8000/applicants', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      })
+
+      if (response.ok) {
+        router.push('/') // Redirect to home page on success
+      } else {
+        const errorData = await response.json()
+        console.error('Failed to create applicant:', errorData.detail)
+        // Show error to user
+        alert(`Error: ${errorData.detail}`)
+      }
+    } catch (error) {
+      console.error('Error creating applicant:', error)
+      // Show network/unexpected error to user
+      alert('An unexpected error occurred. Please try again later.')
+    }
   }
 
   return (
@@ -72,39 +149,79 @@ export default function PerfilCandidato() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="nome">Nome Completo</Label>
-                  <Input id="nome" placeholder="Seu nome completo" />
+                  <Input 
+                    id="nome" 
+                    placeholder="Seu nome completo"
+                    value={formData.nome}
+                    onChange={handleInputChange}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">E-mail</Label>
                   <div className="flex">
                     <Mail className="w-4 h-4 mr-2 mt-3 text-gray-500" />
-                    <Input id="email" type="email" placeholder="seu.email@exemplo.com" />
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="seu.email@exemplo.com"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="senha">Senha</Label>
+                  <div className="flex">
+                    <Lock className="w-4 h-4 mr-2 mt-3 text-gray-500" />
+                    <Input 
+                      id="senha"
+                      type="password"
+                      placeholder="Digite sua senha"
+                      value={formData.senha}
+                      onChange={handleInputChange}
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="telefone">Telefone</Label>
                   <div className="flex">
                     <Phone className="w-4 h-4 mr-2 mt-3 text-gray-500" />
-                    <Input id="telefone" type="tel" placeholder="(11) 98765-4321" />
+                    <Input 
+                      id="telefone" 
+                      type="tel" 
+                      placeholder="(11) 98765-4321"
+                      value={formData.telefone}
+                      onChange={handleInputChange}
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="localizacao">Localização</Label>
                   <div className="flex">
                     <MapPin className="w-4 h-4 mr-2 mt-3 text-gray-500" />
-                    <Input id="localizacao" placeholder="São Paulo, SP" />
+                    <Input 
+                      id="localizacao" 
+                      placeholder="São Paulo, SP"
+                      value={formData.localizacao}
+                      onChange={handleInputChange}
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="linkedin">LinkedIn</Label>
                   <div className="flex">
                     <Linkedin className="w-4 h-4 mr-2 mt-3 text-gray-500" />
-                    <Input id="linkedin" placeholder="linkedin.com/in/seuperfil" />
+                    <Input 
+                      id="linkedin" 
+                      placeholder="linkedin.com/in/seuperfil"
+                      value={formData.linkedin}
+                      onChange={handleInputChange}
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="grupo-social">Grupo Social</Label>
-                  <Select>
+                  <Select onValueChange={handleSelectChange}>
                     <SelectTrigger id="grupo-social">
                       <SelectValue placeholder="Selecione seu grupo social" />
                     </SelectTrigger>
@@ -126,7 +243,13 @@ export default function PerfilCandidato() {
                   <CardTitle className="text-2xl font-bold">Resumo Profissional</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Textarea placeholder="Escreva um breve resumo sobre sua experiência e objetivos profissionais" className="min-h-[100px]" />
+                  <Textarea 
+                    id="resumoProfissional"
+                    placeholder="Escreva um breve resumo sobre sua experiência e objetivos profissionais" 
+                    className="min-h-[100px]"
+                    value={formData.resumoProfissional}
+                    onChange={handleInputChange}
+                  />
                 </CardContent>
               </Card>
               <Card className="p-6">
@@ -142,19 +265,32 @@ export default function PerfilCandidato() {
                     <div key={exp.id} className="space-y-2 border-b pb-4 last:border-b-0">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-semibold">{exp.cargo}</h3>
-                          <p className="text-sm text-gray-500">{exp.empresa}</p>
+                          <Input 
+                            placeholder="Período"
+                            value={exp.tempo}
+                            onChange={(e) => {
+                              const newExps = experiencias.map(e => 
+                                e.id === exp.id ? {...e, tempo: e.target.value} : e
+                              )
+                              setExperiencias(newExps)
+                            }}
+                          />
+                          <Input 
+                            placeholder="Empresa"
+                            value={exp.empresa}
+                            onChange={(e) => {
+                              const newExps = experiencias.map(e =>
+                                e.id === exp.id ? {...e, empresa: e.target.value} : e
+                              )
+                              setExperiencias(newExps)
+                            }}
+                          />
                         </div>
                         <Button onClick={() => removerExperiencia(exp.id)} variant="ghost" size="icon">
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Remover experiência</span>
                         </Button>
                       </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        {exp.periodo}
-                      </div>
-                      <p className="text-sm">{exp.descricao}</p>
                     </div>
                   ))}
                 </CardContent>
@@ -172,17 +308,31 @@ export default function PerfilCandidato() {
                     <div key={form.id} className="space-y-2 border-b pb-4 last:border-b-0">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-semibold">{form.curso}</h3>
-                          <p className="text-sm text-gray-500">{form.instituicao}</p>
+                          <Input 
+                            placeholder="Ano"
+                            value={form.tempo}
+                            onChange={(e) => {
+                              const newForms = formacoes.map(f =>
+                                f.id === form.id ? {...f, tempo: e.target.value} : f
+                              )
+                              setFormacoes(newForms)
+                            }}
+                          />
+                          <Input 
+                            placeholder="Instituição"
+                            value={form.instituicao}
+                            onChange={(e) => {
+                              const newForms = formacoes.map(f =>
+                                f.id === form.id ? {...f, instituicao: e.target.value} : f
+                              )
+                              setFormacoes(newForms)
+                            }}
+                          />
                         </div>
                         <Button onClick={() => removerFormacao(form.id)} variant="ghost" size="icon">
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Remover formação</span>
                         </Button>
-                      </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <GraduationCap className="w-4 h-4 mr-2" />
-                        {form.ano}
                       </div>
                     </div>
                   ))}
@@ -193,13 +343,24 @@ export default function PerfilCandidato() {
                   <CardTitle className="text-2xl font-bold">Habilidades</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Textarea placeholder="Liste suas principais habilidades técnicas e comportamentais" className="min-h-[100px]" />
+                  <Textarea 
+                    id="habilidades"
+                    placeholder="Liste suas principais habilidades técnicas e comportamentais (separadas por vírgula)" 
+                    className="min-h-[100px]"
+                    value={formData.habilidades.join(', ')}
+                    onChange={(e) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        habilidades: e.target.value.split(',').map(skill => skill.trim())
+                      }))
+                    }}
+                  />
                 </CardContent>
               </Card>
             </div>
           </div>
           <div className="mt-8 flex justify-end">
-            <Button>Salvar Perfil</Button>
+            <Button onClick={handleSubmit}>Salvar Perfil</Button>
           </div>
         </div>
       </main>

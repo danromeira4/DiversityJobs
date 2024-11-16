@@ -14,6 +14,7 @@ CREATE TABLE Users (
     disability_type TEXT, -- Only for applicants
     profile_photo_url TEXT,
     registration_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    linkedin TEXT,
     business_name TEXT -- Only for businesses
 );
 
@@ -43,6 +44,8 @@ CREATE TABLE Jobs (
     posted_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     application_deadline DATE,
     application_process TEXT,
+    job_type TEXT,
+    benefits TEXT,
     FOREIGN KEY (business_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
@@ -56,8 +59,3 @@ CREATE TABLE Applications (
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (job_id) REFERENCES Jobs(job_id) ON DELETE CASCADE
 );
-
-ALTER TABLE Jobs
-ADD COLUMN job_type TEXT,
-ADD COLUMN benefits TEXT,
-ADD COLUMN requirements TEXT;

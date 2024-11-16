@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,61 +8,49 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Briefcase, Building2, MapPin, Calendar, Clock } from "lucide-react"
+import { Input } from "@/components/ui/input"
 
-// Dados simulados para as candidaturas
-const candidaturas = [
-  {
-    id: 1,
-    vaga: "Engenheiro de Software",
-    empresa: "TechCorp",
-    localizacao: "São Paulo, SP",
-    dataAplicacao: "2024-03-01",
-    status: "Em análise",
-    tipo: "Híbrido",
-  },
-  {
-    id: 2,
-    vaga: "Designer UX",
-    empresa: "DesignHub",
-    localizacao: "Rio de Janeiro, RJ",
-    dataAplicacao: "2024-02-28",
-    status: "Entrevista agendada",
-    tipo: "Remoto",
-  },
-  {
-    id: 3,
-    vaga: "Analista de Dados",
-    empresa: "DataDriven",
-    localizacao: "Belo Horizonte, MG",
-    dataAplicacao: "2024-02-25",
-    status: "Aprovado",
-    tipo: "Híbrido",
-  },
-  {
-    id: 4,
-    vaga: "Gerente de Produto",
-    empresa: "InovaTech",
-    localizacao: "Curitiba, PR",
-    dataAplicacao: "2024-03-02",
-    status: "Rejeitado",
-    tipo: "Presencial",
-  },
-  {
-    id: 5,
-    vaga: "Desenvolvedor Frontend",
-    empresa: "WebSolutions",
-    localizacao: "Porto Alegre, RS",
-    dataAplicacao: "2024-02-20",
-    status: "Em análise",
-    tipo: "Presencial",
-  },
-]
+interface Application {
+  id: number;
+  vaga: string;
+  empresa: string;
+  localizacao: string;
+  dataAplicacao: string;
+  status: string;
+  tipo: string;
+}
 
 export default function Candidaturas() {
   const [filtroStatus, setFiltroStatus] = useState("todos")
+  const [applications, setApplications] = useState<Application[]>([])
+  const [error, setError] = useState('')
+  const [email, setEmail] = useState('')
 
-  const candidaturasFiltradas = candidaturas.filter(candidatura => 
-    filtroStatus === "todos" || candidatura.status === filtroStatus
+  const fetchApplications = async () => {
+    try {
+      if (!email) return;
+      
+      const response = await fetch(`http://localhost:8000/applicants/${email}/applications`)
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch applications: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setApplications(data)
+    } catch (err) {
+      console.error('Error fetching applications:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch applications')
+    }
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    fetchApplications()
+  }
+
+  const applicationsFiltradas = applications.filter(application => 
+    filtroStatus === "todos" || application.status === filtroStatus
   )
 
   const getStatusColor = (status: string) => {
@@ -108,11 +96,24 @@ export default function Candidaturas() {
             <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none mb-8">
               Minhas Candidaturas
             </h1>
+
+            <form onSubmit={handleSubmit} className="mb-8 flex gap-4">
+              <Input
+                type="email"
+                placeholder="Digite o email do candidato"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <Button type="submit">Buscar</Button>
+            </form>
+
             <Card>
               <CardHeader>
                 <CardTitle>Acompanhe suas candidaturas</CardTitle>
               </CardHeader>
               <CardContent>
+                {error && <p className="text-red-500 mb-4">{error}</p>}
                 <div className="flex justify-between items-center mb-6">
                   <Select value={filtroStatus} onValueChange={setFiltroStatus}>
                     <SelectTrigger className="w-[180px]">
@@ -122,7 +123,7 @@ export default function Candidaturas() {
                       <SelectItem value="todos">Todos os status</SelectItem>
                       <SelectItem value="Em análise">Em análise</SelectItem>
                       <SelectItem value="Entrevista agendada">Entrevista agendada</SelectItem>
-                      <SelectItem value="Aprovado para próxima fase">Aprovado para próxima fase</SelectItem>
+                      <SelectItem value="Aprovado">Aprovado</SelectItem>
                       <SelectItem value="Rejeitado">Rejeitado</SelectItem>
                     </SelectContent>
                   </Select>
@@ -140,33 +141,33 @@ export default function Candidaturas() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {candidaturasFiltradas.map((candidatura) => (
-                      <TableRow key={candidatura.id}>
+                    {applicationsFiltradas.map((application) => (
+                      <TableRow key={application.id}>
                         <TableCell>
-                          <div className="font-medium">{candidatura.vaga}</div>
-                          <div className="text-sm text-gray-500">{candidatura.tipo}</div>
+                          <div className="font-medium">{application.vaga}</div>
+                          <div className="text-sm text-gray-500">{application.tipo}</div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center">
                             <Building2 className="mr-2 h-4 w-4 text-gray-500" />
-                            {candidatura.empresa}
+                            {application.empresa}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center">
                             <MapPin className="mr-2 h-4 w-4 text-gray-500" />
-                            {candidatura.localizacao}
+                            {application.localizacao}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center">
                             <Calendar className="mr-2 h-4 w-4 text-gray-500" />
-                            {new Date(candidatura.dataAplicacao).toLocaleDateString('pt-BR')}
+                            {new Date(application.dataAplicacao).toLocaleDateString('pt-BR')}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={getStatusColor(candidatura.status)}>
-                            {candidatura.status}
+                          <Badge className={getStatusColor(application.status)}>
+                            {application.status}
                           </Badge>
                         </TableCell>
                         <TableCell>

@@ -3,8 +3,17 @@ from typing import List, Optional
 import sqlite3
 from pydantic import BaseModel
 from contextlib import contextmanager
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 DATABASE_URL = "diversityjobs.db"
 
@@ -39,6 +48,19 @@ class Applicant(BaseModel):
     formacoes: Optional[List[dict]]
     habilidades: Optional[List[str]]
 
+class ApplicantCreate(BaseModel):
+    email: str
+    nome: str
+    senha: str
+    telefone: Optional[str] = None
+    localizacao: Optional[str] = None
+    linkedin: Optional[str] = None
+    grupoSocial: Optional[str] = None
+    resumoProfissional: Optional[str] = None
+    experiencias: Optional[List[dict]] = None
+    formacoes: Optional[List[dict]] = None
+    habilidades: Optional[List[str]] = None
+
 class Business(BaseModel):
     user_id: int
     email: str
@@ -51,6 +73,18 @@ class Business(BaseModel):
 class Job(BaseModel):
     job_id: int
     business_id: int
+    disability_type: Optional[str]
+    job_title: str
+    job_description: str
+    location: Optional[str]
+    salary_range: Optional[str]
+    requirements: Optional[str]
+    posted_date: str
+    application_deadline: Optional[str]
+    application_process: Optional[str]
+
+class JobCreate(BaseModel):
+    business_email: str
     disability_type: Optional[str]
     job_title: str
     job_description: str
@@ -89,14 +123,40 @@ async def get_applicant_info(email: str):
         habilidades = []
         
         if result['experiencias']:
-            experiencias = eval(result['experiencias'])
+            experiencias = result['experiencias'].split(',')
+            experiencias_list = []
+            for experiencia in experiencias:
+                try:
+                    experiencia_dict = {
+                        'tempo': experiencia.split(':')[0],
+                        'empresa': experiencia.split(':')[1]
+                    }
+                except:
+                    experiencia_dict = {
+                        'tempo': '',
+                        'empresa': experiencia
+                    }
+                experiencias_list.append(experiencia_dict)
         
         if result['formacoes']:
-            formacoes = eval(result['formacoes'])
-        
+            formacoes = result['formacoes'].split(',')
+            formacoes_list = []
+            for formacao in formacoes:
+                try:
+                    formacao_dict = {
+                        'tempo': formacao.split(':')[0],
+                        'instituicao': formacao.split(':')[1]
+                    }
+                except:
+                    formacao_dict = {
+                        'tempo': '',
+                        'instituicao': formacao
+                    }
+                formacoes_list.append(formacao_dict)
+                
         if result['habilidades']:
-            habilidades = eval(result['habilidades'])
-        
+            habilidades_list = result['habilidades'].split(',')
+
         # Create applicant dict with resume field
         applicant = {
             'user_id': result['user_id'],
@@ -107,9 +167,9 @@ async def get_applicant_info(email: str):
             'linkedin': result['linkedin'],
             'grupoSocial': [result['grupoSocial']] if result['grupoSocial'] else [],
             'resumoProfissional': result['resumoProfissional'],
-            'experiencias': experiencias,
-            'formacoes': formacoes,
-            'habilidades': habilidades
+            'experiencias': experiencias_list,
+            'formacoes': formacoes_list,
+            'habilidades': habilidades_list
         }
         
         return applicant
@@ -265,7 +325,7 @@ async def get_all_jobs():
             # Convert tags string to list if it exists
             tags = row['tags'].split(',') if row['tags'] else []
             # Convert skills string to list if it exists
-            skills = row['requirements'].split(',') if row['requirements'] else []
+            skills = row['skills'].split(',') if row['skills'] else []
             # Convert benefits string to list if it exists
             benefits = row['benefits'].split(',') if row['benefits'] else []
             
@@ -314,10 +374,25 @@ async def get_applicant_applications(email: str):
         return [dict(row) for row in results]
     
 # Create a new job
-@app.post("/jobs", response_model=Job)
-async def create_job(job: Job):
+@app.post("/jobs", response_model=JobCreate)
+async def create_job(job: JobCreate):
     with get_db() as conn:
         cursor = conn.cursor()
+        
+        # First get the business_id from the email
+        get_business_query = """
+        SELECT user_id 
+        FROM Users 
+        WHERE email = ? AND user_type = 'business'
+        """
+        
+        cursor.execute(get_business_query, (job.business_email,))
+        result = cursor.fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Business not found")
+            
+        business_id = result['user_id']
         
         query = """
         INSERT INTO Jobs (
@@ -336,7 +411,7 @@ async def create_job(job: Job):
         
         try:
             cursor.execute(query, (
-                job.business_id,
+                business_id,
                 job.disability_type,
                 job.job_title,
                 job.job_description,
@@ -349,11 +424,80 @@ async def create_job(job: Job):
             ))
             conn.commit()
             
-            # Get the id of the newly inserted job
-            job_id = cursor.lastrowid
-            job.job_id = job_id
-            
             return job
+            
+        except sqlite3.Error as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/applicants", response_model=ApplicantCreate)
+async def create_applicant(applicant: ApplicantCreate):
+    with get_db() as conn:
+        cursor = conn.cursor()
+        
+        # Check if email already exists
+        cursor.execute("SELECT email FROM Users WHERE email = ?", (applicant.email,))
+        if cursor.fetchone():
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        # Insert into Users table
+        user_query = """
+        INSERT INTO Users (
+            email, password_hash, name, phone_number, address, linkedin, 
+            disability_type, user_type
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'applicant')
+        """
+        
+        try:
+            cursor.execute(user_query, (
+                applicant.email,
+                applicant.senha,
+                applicant.nome,
+                applicant.telefone,
+                applicant.localizacao,
+                applicant.linkedin,
+                applicant.grupoSocial
+            ))
+            user_id = cursor.lastrowid
+            
+            # Insert into Resumes table if professional info exists
+            if any([applicant.resumoProfissional, applicant.experiencias, 
+                   applicant.formacoes, applicant.habilidades]):
+                
+                # Format experiences, education and skills as strings
+                experiencias_str = None
+                if applicant.experiencias:
+                    experiencias_str = ','.join(
+                        f"{exp['tempo']}:{exp['empresa']}" 
+                        for exp in applicant.experiencias
+                    )
+                
+                formacoes_str = None
+                if applicant.formacoes:
+                    formacoes_str = ','.join(
+                        f"{form['tempo']}:{form['instituicao']}" 
+                        for form in applicant.formacoes
+                    )
+                
+                habilidades_str = None
+                if applicant.habilidades:
+                    habilidades_str = ','.join(applicant.habilidades)
+                
+                resume_query = """
+                INSERT INTO Resumes (
+                    user_id, summary, experience, education, skills
+                ) VALUES (?, ?, ?, ?, ?)
+                """
+                
+                cursor.execute(resume_query, (
+                    user_id,
+                    applicant.resumoProfissional,
+                    experiencias_str,
+                    formacoes_str,
+                    habilidades_str
+                ))
+            
+            conn.commit()
+            return applicant
             
         except sqlite3.Error as e:
             raise HTTPException(status_code=400, detail=str(e))

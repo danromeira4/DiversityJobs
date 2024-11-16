@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,87 +11,42 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Briefcase, MapPin, Building2, Search, Filter, X } from "lucide-react"
 
-// Dados simulados para as vagas
-const jobListings = [
-  {
-    id: 1,
-    title: "Engenheiro de Software",
-    company: "TechCorp",
-    location: "Belo Horizonte, MG",
-    type: "Remoto",
-    tags: ["LGBTQIA+", "Mulheres"],
-    description: "Estamos procurando um engenheiro de software talentoso para se juntar à nossa equipe dinâmica...",
-    skills: ["React", "Node.js", "TypeScript", "AWS"],
-    benefits: ["Plano de saúde", "Vale refeição", "Horário flexível", "Home office"],
-    salary: "R$ 8.000 - R$ 12.000",
-  },
-  {
-    id: 2,
-    title: "Gerente de Marketing",
-    company: "Globo",
-    location: "Rio de Janeiro, RJ",
-    type: "Híbrido",
-    tags: ["Pessoas Negras"],
-    description: "Buscamos um gerente de marketing experiente para liderar nossas estratégias de crescimento...",
-    skills: ["Marketing digital", "SEO", "Análise de dados", "Gestão de equipe"],
-    benefits: ["Plano de saúde e odontológico", "Vale transporte", "Bônus anual"],
-    salary: "R$ 10.000 - R$ 15.000",
-  },
-  {
-    id: 3,
-    title: "Designer UX",
-    company: "DesignHub",
-    location: "São Paulo, SP",
-    type: "Híbrido",
-    tags: ["Pessoas com Deficiência", "Neurodiversidade"],
-    description: "Procuramos um designer UX criativo para melhorar a experiência do usuário em nossos produtos...",
-    skills: ["Figma", "Adobe XD", "Pesquisa de usuário", "Prototipagem"],
-    benefits: ["Equipamento fornecido", "Cursos de aperfeiçoamento", "Horário flexível"],
-    salary: "R$ 6.000 - R$ 9.000",
-  },
-  {
-    id: 4,
-    title: "Analista de Dados",
-    company: "DataDriven",
-    location: "Belo Horizonte, MG",
-    type: "Remoto",
-    tags: ["Mulheres", "Pessoas Negras"],
-    description: "Estamos à procura de um analista de dados perspicaz para transformar dados brutos em insights...",
-    skills: ["SQL", "Python", "Tableau", "Machine Learning"],
-    benefits: ["Plano de saúde", "Vale alimentação", "Dia de trabalho remoto"],
-    salary: "R$ 4.000 - R$ 6.000 (proporcional)",
-  },
-  {
-    id: 5,
-    title: "Especialista em Suporte ao Cliente",
-    company: "ServiceFirst",
-    location: "Porto Alegre, RS",
-    type: "Presencial",
-    tags: ["LGBTQIA+"],
-    description: "Procuramos um especialista em suporte ao cliente empático e orientado para soluções...",
-    skills: ["Atendimento ao cliente", "Resolução de problemas", "CRM", "Comunicação escrita e verbal"],
-    benefits: ["Plano de saúde", "Vale refeição", "Plano de carreira"],
-    salary: "R$ 3.500 - R$ 5.000",
-  },
-  {
-    id: 6,
-    title: "Engenheiro Quimico",
-    company: "Bayer",
-    location: "Cascavel, PR",
-    type: "Remoto",
-    tags: ["Profissional 50+"],
-    description: "Precisamos de um profissional experiente na área de engenharia químico para supervisionar os processos da nossa indústria.",
-    skills: ["Química", "Gestão"],
-    benefits: ["Gym pass", "Vale refeição", "Plano de saúde", "Day Off"],
-    salary: "R$5000",
-  }
-]
+interface Job {
+  id: number
+  title: string
+  company: string
+  location: string
+  type: string
+  tags: string[]
+  description: string
+  skills: string[]
+  benefits: string[]
+  salary: string
+}
 
 export default function JobsPage() {
+  const [jobs, setJobs] = useState<Job[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedJobType, setSelectedJobType] = useState("")
   const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const [selectedJob, setSelectedJob] = useState<typeof jobListings[0] | null>(null)
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/jobs')
+        if (!response.ok) {
+          throw new Error('Failed to fetch jobs')
+        }
+        const data = await response.json()
+        setJobs(data)
+      } catch (error) {
+        console.error('Error fetching jobs:', error)
+      }
+    }
+
+    fetchJobs()
+  }, [])
 
   const handleTagToggle = (tag: string) => {
     setSelectedTags(prev =>
@@ -100,11 +55,10 @@ export default function JobsPage() {
   }
 
   const handleJobTypeChange = (value: string) => {
-    // Se "all" for selecionado, define um array com todos os tipos
-    setSelectedJobType(value === "all" ? "" : value);
-  };
+    setSelectedJobType(value === "all" ? "" : value)
+  }
 
-  const filteredJobs = jobListings.filter(job => {
+  const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           job.company.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesJobType = selectedJobType === "" || job.type === selectedJobType
