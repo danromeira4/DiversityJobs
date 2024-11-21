@@ -7,15 +7,21 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-14 flex items-center">
-        <Link className="flex items-center justify-center" href="#">
+        <Link className="flex items-center justify-center" href="/candidato-john">
           <Briefcase className="h-6 w-6" />
           <span className="sr-only">Diversity Jobs</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/registro">
-            Registrar
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/perfil">
+            Perfil
           </Link>
-          </nav>
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/jobs">
+            Vagas
+          </Link>
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/candidaturas">
+            Candidaturas
+          </Link>
+        </nav>
       </header>
       <main className="flex-1">
         <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500">
@@ -31,10 +37,10 @@ export default function HomePage() {
               </div>
               <div className="space-x-4">
                 <Button asChild className="bg-white text-purple-600 hover:bg-gray-100">
-                  <Link href="/candidato-john">Entrar como Candidato</Link>
+                  <Link href="/jobs">Buscar Vagas</Link>
                 </Button>
                 <Button asChild variant="outline" className="bg-transparent text-white border-white hover:bg-white hover:text-purple-600">
-                  <Link href="/empresa">Entrar como Empresa</Link>
+                  <Link href="/candidaturas">Acompanhar Candidaturas</Link>
                 </Button>
               </div>
             </div>
@@ -93,13 +99,7 @@ export default function HomePage() {
                 <h2 className="lg:leading-tighter text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl xl:text-[3.4rem] 2xl:text-[3.75rem]">
                   Encontre o Cargo Perfeito
                 </h2>
-                <Link
-                  className="inline-flex h-9 items-center justify-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-purple-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-purple-700 disabled:pointer-events-none disabled:opacity-50"
-                  href="#"
-                >
-                  Buscar Vagas
-                </Link>
-              </div>
+                </div>
               <div className="flex flex-col items-start space-y-4">
                 <Users className="h-12 w-12 text-purple-600" />
                 <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
@@ -124,12 +124,6 @@ export default function HomePage() {
                   Somos mais que um quadro de empregos. O Diversity Jobs é um movimento em direção a um mercado de trabalho mais inclusivo e justo. Nossa plataforma foi criada para quebrar barreiras e criar oportunidades para todos.
                 </p>
               </div>
-              <Link
-                className="inline-flex h-9 items-center justify-center rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50"
-                href="#"
-              >
-                Saiba Mais Sobre Nós <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
             </div>
           </div>
         </section>

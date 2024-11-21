@@ -1,13 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Briefcase, Mail, Phone, MapPin, Linkedin, Calendar, GraduationCap } from "lucide-react"
-import { Input } from "@/components/ui/input"
 
 interface Experience {
   tempo: string;
@@ -34,39 +33,42 @@ interface CandidateProfile {
 }
 
 export default function VisualizarPerfilCandidato() {
-  const [email, setEmail] = useState('')
   const [candidateProfile, setCandidateProfile] = useState<CandidateProfile | null>(null)
   const [error, setError] = useState('')
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
+  useEffect(() => {
+    const fetchCandidateData = async () => {
+      const email = "john@example.com" // Email fixo do candidato
+      setError('')
 
-    try {
-      const response = await fetch(`http://localhost:8000/applicants/${email}`)
-      console.log('Response status:', response.status)
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Error response:', errorText)
-        throw new Error(`Failed to fetch candidate data: ${response.status} ${response.statusText}`)
+      try {
+        const response = await fetch(`http://localhost:8000/applicants/${email}`)
+        console.log('Response status:', response.status)
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('Error response:', errorText)
+          throw new Error(`Failed to fetch candidate data: ${response.status} ${response.statusText}`)
+        }
+
+        const data = await response.json()
+        console.log('Candidate data:', data)
+
+        // Validate data matches expected CandidateProfile interface
+        if (!data.user_id || !data.nome || !data.email) {
+          throw new Error('Invalid candidate data format')
+        }
+
+        setCandidateProfile(data)
+      } catch (err) {
+        console.error('Error fetching candidate:', err)
+        setError(err instanceof Error ? err.message : 'Failed to fetch candidate data')
+        setCandidateProfile(null)
       }
-
-      const data = await response.json()
-      console.log('Candidate data:', data)
-
-      // Validate data matches expected CandidateProfile interface
-      if (!data.user_id || !data.nome || !data.email) {
-        throw new Error('Invalid candidate data format')
-      }
-
-      setCandidateProfile(data)
-    } catch (err) {
-      console.error('Error fetching candidate:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch candidate data')
-      setCandidateProfile(null)
     }
-  }
+
+    fetchCandidateData()
+  }, [])
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -76,16 +78,16 @@ export default function VisualizarPerfilCandidato() {
           <span className="sr-only">Diversity Jobs</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/">
             Início
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/jobs">
             Vagas
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/sobre">
             Sobre Nós
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/contato">
             Contato
           </Link>
         </nav>
@@ -97,17 +99,6 @@ export default function VisualizarPerfilCandidato() {
               Perfil do Candidato
             </h1>
           </div>
-
-          <form onSubmit={handleSubmit} className="mb-8 flex gap-4">
-            <Input
-              type="email"
-              placeholder="Digite o email do candidato"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <Button type="submit">Buscar</Button>
-          </form>
 
           {error && <p className="text-red-500 mb-4">{error}</p>}
 
@@ -133,17 +124,21 @@ export default function VisualizarPerfilCandidato() {
                   </div>
                   <div className="flex items-center space-x-2">
                     <Phone className="w-4 h-4 text-gray-500" />
-                    <span>{candidateProfile.telefone}</span>
+                    <span>{candidateProfile.telefone || "Não informado"}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <MapPin className="w-4 h-4 text-gray-500" />
-                    <span>{candidateProfile.localizacao}</span>
+                    <span>{candidateProfile.localizacao || "Não informado"}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Linkedin className="w-4 h-4 text-gray-500" />
-                    <Link href={`https://${candidateProfile.linkedin}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                      {candidateProfile.linkedin}
-                    </Link>
+                    {candidateProfile.linkedin ? (
+                      <Link href={`https://${candidateProfile.linkedin}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                        {candidateProfile.linkedin}
+                      </Link>
+                    ) : (
+                      <span>Não informado</span>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -153,7 +148,7 @@ export default function VisualizarPerfilCandidato() {
                     <CardTitle className="text-2xl font-bold">Resumo Profissional</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p>{candidateProfile.resumoProfissional}</p>
+                    <p>{candidateProfile.resumoProfissional || "Não informado"}</p>
                   </CardContent>
                 </Card>
                 <Card className="p-6">
@@ -161,15 +156,19 @@ export default function VisualizarPerfilCandidato() {
                     <CardTitle className="text-2xl font-bold">Experiência Profissional</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {candidateProfile.experiencias.map((exp: Experience, index: number) => (
-                      <div key={index} className="space-y-2 border-b pb-4 last:border-b-0">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          {exp.tempo}
+                    {candidateProfile.experiencias.length > 0 ? (
+                      candidateProfile.experiencias.map((exp: Experience, index: number) => (
+                        <div key={index} className="space-y-2 border-b pb-4 last:border-b-0">
+                          <div className="flex items-center text-sm text-gray-500">
+                            <Calendar className="w-4 h-4 mr-2" />
+                            {exp.tempo}
+                          </div>
+                          <p className="text-sm text-gray-500">{exp.empresa}</p>
                         </div>
-                        <p className="text-sm text-gray-500">{exp.empresa}</p>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <p>Nenhuma experiência profissional informada</p>
+                    )}
                   </CardContent>
                 </Card>
                 <Card className="p-6">
@@ -177,15 +176,19 @@ export default function VisualizarPerfilCandidato() {
                     <CardTitle className="text-2xl font-bold">Formação Acadêmica</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {candidateProfile.formacoes.map((form: Education, index: number) => (
-                      <div key={index} className="space-y-2 border-b pb-4 last:border-b-0">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <GraduationCap className="w-4 h-4 mr-2" />
-                          {form.tempo}
+                    {candidateProfile.formacoes.length > 0 ? (
+                      candidateProfile.formacoes.map((form: Education, index: number) => (
+                        <div key={index} className="space-y-2 border-b pb-4 last:border-b-0">
+                          <div className="flex items-center text-sm text-gray-500">
+                            <GraduationCap className="w-4 h-4 mr-2" />
+                            {form.tempo}
+                          </div>
+                          <p className="text-sm text-gray-500">{form.instituicao}</p>
                         </div>
-                        <p className="text-sm text-gray-500">{form.instituicao}</p>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <p>Nenhuma formação acadêmica informada</p>
+                    )}
                   </CardContent>
                 </Card>
                 <Card className="p-6">
@@ -194,9 +197,13 @@ export default function VisualizarPerfilCandidato() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
-                      {candidateProfile.habilidades.map((skill: string, index: number) => (
-                        <Badge key={index} variant="secondary">{skill}</Badge>
-                      ))}
+                      {candidateProfile.habilidades.length > 0 ? (
+                        candidateProfile.habilidades.map((skill: string, index: number) => (
+                          <Badge key={index} variant="secondary">{skill}</Badge>
+                        ))
+                      ) : (
+                        <p>Nenhuma habilidade informada</p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -206,16 +213,7 @@ export default function VisualizarPerfilCandidato() {
         </div>
       </main>
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-gray-500">© 2024 Diversity Jobs. Todos os direitos reservados.</p>
-        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-xs hover:underline underline-offset-4" href="#">
-            Termos de Serviço
-          </Link>
-          <Link className="text-xs hover:underline underline-offset-4" href="#">
-            Política de Privacidade
-          </Link>
-        </nav>
+        <p className="text-xs text-gray-500">© 2024 Diversity </p>
       </footer>
     </div>
-  )
-}
+  )}

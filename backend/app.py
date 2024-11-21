@@ -17,6 +17,10 @@ app.add_middleware(
 
 DATABASE_URL = "diversityjobs.db"
 
+@app.get("/")
+def read_root():
+    return {"message": "Hello, World!"}
+
 @contextmanager
 def get_db():
     conn = sqlite3.connect(DATABASE_URL)

@@ -136,7 +136,7 @@ export default function DashboardEmpresa() {
   return (
     <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-14 flex items-center">
-        <Link className="flex items-center justify-center" href="/">
+        <Link className="flex items-center justify-center" href="/empresa">
           <Building2 className="h-6 w-6" />
           <span className="ml-2 text-lg font-semibold">TechCorp</span>
         </Link>
