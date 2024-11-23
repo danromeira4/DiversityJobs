@@ -129,7 +129,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Link href="/empresa" className="inline-flex items-center mb-6 text-primary hover:underline">
+      <Link href="/vagas-criadas" className="inline-flex items-center mb-6 text-primary hover:underline">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Voltar para o Dashboard
       </Link>
@@ -234,6 +234,22 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
                     <Textarea id="application_process" name="application_process" defaultValue={job.application_process} />
                   </div>
                   <div>
+                    <Label htmlFor="social_group">Grupos Sociais</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {["LGBTQIA+", "Mulheres", "Pessoas Negras", "PCD", "Neurodiversidade", "Profissional 50+", "Outros"].map((group) => (
+                        <div key={group} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={group}
+                            name="social_group"
+                            value={group}
+                            defaultChecked={job.social_group ? job.social_group.includes(group) : false}
+                          />
+                          <Label htmlFor={group}>{group}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
                     <Label htmlFor="status">Status da Vaga</Label>
                     <Select onValueChange={(value) => handleStatusChange(value)} defaultValue={job.status}>
                       <SelectTrigger className="w-full">
@@ -251,6 +267,9 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
               </ScrollArea>
             </DialogContent>
           </Dialog>
+          <Button variant="outline">
+            <Edit className="mr-2 h-4 w-4" />Editar Vaga
+          </Button>
         </CardFooter>
       </Card>
       <Card>

@@ -580,3 +580,23 @@ async def update_job(job_id: int, job: JobUpdate):
             raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
     return {"message": "Job updated successfully"}
+
+@app.delete("/jobs/{job_id}")
+async def delete_job(job_id: int):
+    with get_db() as conn:
+        cursor = conn.cursor()
+
+        # Check if the job exists
+        cursor.execute("SELECT * FROM Jobs WHERE job_id = ?", (job_id,))
+        job = cursor.fetchone()
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+
+        # Delete the job
+        try:
+            cursor.execute("DELETE FROM Jobs WHERE job_id = ?", (job_id,))
+            conn.commit()
+        except sqlite3.Error as e:
+            raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+    return {"message": "Job deleted successfully"}

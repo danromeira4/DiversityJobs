@@ -143,7 +143,7 @@ export default function DashboardEmpresa() {
       <header className="px-4 lg:px-6 h-14 flex items-center">
         <Link className="flex items-center justify-center" href="/empresa">
           <Building2 className="h-6 w-6" />
-          <span className="ml-2 text-lg font-semibold">TechCorp</span>
+          <span className="ml-2 text-lg font-semibold">Empresas</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
@@ -316,6 +316,7 @@ export default function DashboardEmpresa() {
                       <TableHead>Localização</TableHead>
                       <TableHead>Data de Criação</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Grupos Sociais</TableHead>
                       <TableHead>Ações</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -344,8 +345,21 @@ export default function DashboardEmpresa() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="sm">Editar</Button>
-                          <Button variant="ghost" size="sm">Ver Candidatos</Button>
+                          <div className="flex flex-wrap gap-2">
+                            {vaga.social_group.map((group: string, index: number) => (
+                              <Badge key={index} className="bg-blue-100 text-blue-800">
+                                {group}
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Link href={`/vagas-criadas/${vaga.job_id}`}>
+                            <Button variant="ghost" size="sm">Editar</Button>
+                          </Link>
+                          <Link href={`/vagas-criadas/${vaga.job_id}`}>
+                            <Button variant="ghost" size="sm">Ver Candidatos</Button>
+                          </Link>
                         </TableCell>
                       </TableRow>
                     ))}
