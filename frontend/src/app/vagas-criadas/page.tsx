@@ -27,7 +27,7 @@ export default function DashboardEmpresa() {
     requirements: "",
     application_deadline: "",
     application_process: "",
-    disability_type: "",
+    social_group: [] as string[],
     posted_date: new Date().toISOString().split('T')[0]
   })
 
@@ -70,12 +70,17 @@ export default function DashboardEmpresa() {
   }
 
   const handleCheckboxChange = (type: string) => {
-    setNovaVaga(prev => ({
-      ...prev,
-      disability_type: type
-    }))
-  }
-
+    setNovaVaga((prev) => {
+      const isSelected = prev.social_group.includes(type);
+      return {
+        ...prev,
+        social_group: isSelected
+          ? prev.social_group.filter((item) => item !== type) // Remove se já estiver selecionado
+          : [...prev.social_group, type], // Adiciona se ainda não estiver selecionado
+      };
+    });
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -114,7 +119,7 @@ export default function DashboardEmpresa() {
             requirements: "",
             application_deadline: "",
             application_process: "",
-            disability_type: "",
+            social_group: [] as string[],
             posted_date: new Date().toISOString().split('T')[0]
           })
         } catch (error) {
@@ -266,15 +271,15 @@ export default function DashboardEmpresa() {
                       />
                     </div>
                     <div className="col-span-2">
-                      <Label>Tipos de Deficiência</Label>
+                      <Label>Grupo Social</Label>
                       <div className="grid grid-cols-3 gap-2">
-                        {['fisica', 'visual', 'auditiva', 'intelectual', 'multipla'].map((type) => (
+                        {["LGBTQIA+", "Mulheres", "Pessoas Negras", "PCD", "Neurodiversidade", "Profissional 50+","Outros"].map((type) => (
                           <div key={type} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={type}
-                              checked={novaVaga.disability_type === type}
-                              onCheckedChange={() => handleCheckboxChange(type)}
-                            />
+                        <Checkbox
+                          id={type}
+                          checked={novaVaga.social_group.includes(type)} // Verifica se o tipo está no array
+                          onCheckedChange={() => handleCheckboxChange(type)} // Adiciona ou remove o tipo do array
+                        />
                             <Label htmlFor={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</Label>
                           </div>
                         ))}

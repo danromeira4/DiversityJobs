@@ -2,7 +2,6 @@
 -- Note: SQLite creates database file automatically, no CREATE DATABASE needed
 -- USE statement not needed for SQLite
 
--- Table to store users (both applicants and businesses)
 CREATE TABLE Users (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_type TEXT CHECK(user_type IN ('applicant', 'business')) NOT NULL,
@@ -11,7 +10,7 @@ CREATE TABLE Users (
     name TEXT NOT NULL,
     phone_number TEXT,
     address TEXT,
-    disability_type TEXT, -- Only for applicants
+    social_group TEXT, -- Stores JSON array of social groups
     profile_photo_url TEXT,
     registration_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     linkedin TEXT,
@@ -35,7 +34,7 @@ CREATE TABLE Resumes (
 CREATE TABLE Jobs (
     job_id INTEGER PRIMARY KEY AUTOINCREMENT,
     business_id INTEGER NOT NULL,
-    disability_type TEXT,
+    social_group TEXT, -- Armazena um array de strings em formato JSON
     job_title TEXT NOT NULL,
     job_description TEXT NOT NULL,
     location TEXT,

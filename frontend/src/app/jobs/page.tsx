@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
@@ -25,11 +26,13 @@ interface Job {
 }
 
 export default function JobsPage() {
+  const router = useRouter()
   const [jobs, setJobs] = useState<Job[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedJobType, setSelectedJobType] = useState("")
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [selectedCity, setSelectedCity] = useState("")
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -63,9 +66,11 @@ export default function JobsPage() {
                           job.company.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesJobType = selectedJobType === "" || job.type === selectedJobType
     const matchesTags = selectedTags.length === 0 || selectedTags.some(tag => job.tags.includes(tag))
-    return matchesSearch && matchesJobType && matchesTags
+    const matchesCity = selectedCity === "" || job.location === selectedCity
+  
+    return matchesSearch && matchesJobType && matchesTags && matchesCity
   })
-
+  
   return (
     <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-14 flex items-center">
@@ -115,9 +120,25 @@ export default function JobsPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="city">Cidade</Label>
+                    <Select onValueChange={(value) => setSelectedCity(value === "all" ? "" : value)}>
+                      <SelectTrigger id="city">
+                        <SelectValue placeholder="Selecione a cidade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as Cidades</SelectItem>
+                        {[...new Set(jobs.map((job) => job.location))].map((city) => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
                     <Label>Grupos de Diversidade</Label>
                     <div className="space-y-2">
-                      {["LGBTQIA+", "Mulheres", "Pessoas Negras", "Pessoas com Deficiência", "Neurodiversidade", "Profissional 50+"].map((tag) => (
+                      {["LGBTQIA+", "Mulheres", "Pessoas Negras", "PCD", "Neurodiversidade", "Profissional 50+","Outros"].map((tag) => (
                         <div key={tag} className="flex items-center space-x-2">
                           <Checkbox
                             id={tag}
@@ -183,7 +204,7 @@ export default function JobsPage() {
                       <CardFooter>
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button onClick={() => setSelectedJob(job)}>Ver Detalhes</Button>
+                            <Button onClick={() => router.push(`/jobs/${job.id}`)}>Ver Detalhes</Button>
                           </DialogTrigger>
                           <DialogContent className="sm:max-w-[425px]">
                             <DialogHeader>

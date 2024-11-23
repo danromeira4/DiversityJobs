@@ -4,6 +4,8 @@ import sqlite3
 from pydantic import BaseModel
 from contextlib import contextmanager
 from fastapi.middleware.cors import CORSMiddleware
+import json
+
 
 app = FastAPI()
 
@@ -59,7 +61,7 @@ class ApplicantCreate(BaseModel):
     telefone: Optional[str] = None
     localizacao: Optional[str] = None
     linkedin: Optional[str] = None
-    grupoSocial: Optional[str] = None
+    grupoSocial: Optional[List[str]] = None  # Agora aceita lista
     resumoProfissional: Optional[str] = None
     experiencias: Optional[List[dict]] = None
     formacoes: Optional[List[dict]] = None
@@ -77,7 +79,7 @@ class Business(BaseModel):
 class Job(BaseModel):
     job_id: int
     business_id: int
-    disability_type: Optional[str]
+    social_group: Optional[List[str]]  # Aceita uma lista de strings
     job_title: str
     job_description: str
     location: Optional[str]
@@ -89,7 +91,7 @@ class Job(BaseModel):
 
 class JobCreate(BaseModel):
     business_email: str
-    disability_type: Optional[str]
+    social_group: Optional[List[str]]  # Aceita uma lista de strings
     job_title: str
     job_description: str
     location: Optional[str]
@@ -99,6 +101,17 @@ class JobCreate(BaseModel):
     application_deadline: Optional[str]
     application_process: Optional[str]
 
+# Modelo para atualização de vaga
+class JobUpdate(BaseModel):
+    job_title: Optional[str] = None
+    job_description: Optional[str] = None
+    location: Optional[str] = None
+    salary_range: Optional[str] = None
+    requirements: Optional[str] = None
+    application_deadline: Optional[str] = None  # Campo para o prazo de aplicação
+    application_process: Optional[str] = None
+    social_group: Optional[list[str]] = None  # Aceita uma lista de strings
+
 # 1. Get applicant information with resume
 @app.get("/applicants/{email}", response_model=Applicant)
 async def get_applicant_info(email: str):
@@ -107,7 +120,7 @@ async def get_applicant_info(email: str):
         
         query = """
         SELECT u.user_id, u.name as nome, u.email, u.phone_number as telefone, 
-               u.address as localizacao, u.linkedin, u.disability_type as grupoSocial,
+               u.address as localizacao, u.linkedin, u.social_group as grupoSocial,
                r.resume_id, r.resume_file_url, r.summary as resumoProfissional, 
                r.skills as habilidades, r.education as formacoes, r.experience as experiencias
         FROM Users u
@@ -210,14 +223,19 @@ async def get_job_info(job_id: int):
         FROM Jobs
         WHERE job_id = ?
         """
-        
         cursor.execute(query, (job_id,))
         result = cursor.fetchone()
         
         if not result:
             raise HTTPException(status_code=404, detail="Job not found")
         
-        return dict(result)
+        # Convertendo `social_group` de JSON para lista
+        job = dict(result)
+        if job.get("social_group"):
+            job["social_group"] = json.loads(job["social_group"])  # Desserializar JSON para lista
+        
+        return job
+
 
 # 4. Get all applicants for a job
 @app.get("/jobs/{job_id}/applicants", response_model=List[Applicant])
@@ -227,7 +245,7 @@ async def get_job_applicants(job_id: int):
         
         query = """
         SELECT u.user_id, u.email, u.name, u.phone_number, u.address, 
-               u.disability_type, u.profile_photo_url,
+               u.social_group, u.profile_photo_url,
                r.resume_id, r.resume_file_url, r.summary, r.skills, 
                r.education, r.experience
         FROM Users u
@@ -256,7 +274,7 @@ async def get_job_applicants(job_id: int):
                 'name': row['name'],
                 'phone_number': row['phone_number'],
                 'address': row['address'],
-                'disability_type': row['disability_type'],
+                'social_group': row['social_group'],
                 'profile_photo_url': row['profile_photo_url'],
                 'resume': resume
             }
@@ -273,7 +291,7 @@ async def get_matching_jobs(email: str):
         query = """
         SELECT j.*
         FROM Jobs j
-        INNER JOIN Users u ON u.disability_type = j.disability_type
+        INNER JOIN Users u ON u.social_group = j.social_group
         WHERE u.email = ? AND u.user_type = 'applicant'
         """
         
@@ -287,18 +305,27 @@ async def get_matching_jobs(email: str):
 async def get_business_jobs(email: str):
     with get_db() as conn:
         cursor = conn.cursor()
-        
+
+        # Query para buscar as vagas do negócio
         query = """
         SELECT j.*
         FROM Jobs j
         INNER JOIN Users u ON u.user_id = j.business_id
         WHERE u.email = ? AND u.user_type = 'business'
         """
-        
         cursor.execute(query, (email,))
         results = cursor.fetchall()
-        
-        return [dict(row) for row in results]
+
+        # Transformar resultados em dicionários e desserializar social_group
+        jobs = []
+        for row in results:
+            job = dict(row)
+            if job.get("social_group"):
+                job["social_group"] = json.loads(job["social_group"])  # Desserializar JSON para lista
+            jobs.append(job)
+
+        return jobs
+
 
 # 7. Get all available jobs
 @app.get("/jobs", response_model=List[dict])
@@ -312,7 +339,7 @@ async def get_all_jobs():
                u.business_name as company,
                j.location,
                j.job_type as type,
-               j.disability_type as tags,
+               j.social_group as tags,
                j.job_description as description,
                j.requirements as skills,
                j.benefits,
@@ -326,29 +353,28 @@ async def get_all_jobs():
         
         jobs = []
         for row in results:
-            # Convert tags string to list if it exists
-            tags = row['tags'].split(',') if row['tags'] else []
-            # Convert skills string to list if it exists
-            skills = row['skills'].split(',') if row['skills'] else []
-            # Convert benefits string to list if it exists
-            benefits = row['benefits'].split(',') if row['benefits'] else []
+            job = dict(row)
             
-            job = {
-                'id': row['id'],
-                'title': row['title'],
-                'company': row['company'],
-                'location': row['location'],
-                'type': row['type'],
-                'tags': tags,
-                'description': row['description'],
-                'skills': skills,
-                'benefits': benefits,
-                'salary': row['salary']
-            }
+            # Desserializar JSON, tratando possíveis erros
+            try:
+                job["tags"] = json.loads(job["tags"]) if job["tags"] else []
+            except json.JSONDecodeError:
+                job["tags"] = []
+
+            try:
+                job["skills"] = json.loads(job["skills"]) if job["skills"] else []
+            except json.JSONDecodeError:
+                job["skills"] = []
+
+            try:
+                job["benefits"] = json.loads(job["benefits"]) if job["benefits"] else []
+            except json.JSONDecodeError:
+                job["benefits"] = []
+            
             jobs.append(job)
             
         return jobs
-    
+
 # 8. Get all jobs applications for an applicant
 @app.get("/applicants/{email}/applications")
 async def get_applicant_applications(email: str):
@@ -380,16 +406,16 @@ async def get_applicant_applications(email: str):
 # Create a new job
 @app.post("/jobs", response_model=JobCreate)
 async def create_job(job: JobCreate):
+    social_group_json = json.dumps(job.social_group) if job.social_group else None  # Serializa para JSON
     with get_db() as conn:
         cursor = conn.cursor()
         
-        # First get the business_id from the email
+        # Obter business_id a partir do e-mail
         get_business_query = """
         SELECT user_id 
         FROM Users 
         WHERE email = ? AND user_type = 'business'
         """
-        
         cursor.execute(get_business_query, (job.business_email,))
         result = cursor.fetchone()
         
@@ -398,10 +424,11 @@ async def create_job(job: JobCreate):
             
         business_id = result['user_id']
         
+        # Inserir na tabela Jobs
         query = """
         INSERT INTO Jobs (
             business_id,
-            disability_type,
+            social_group,
             job_title,
             job_description,
             location,
@@ -416,7 +443,7 @@ async def create_job(job: JobCreate):
         try:
             cursor.execute(query, (
                 business_id,
-                job.disability_type,
+                social_group_json,  # Salvar como JSON
                 job.job_title,
                 job.job_description,
                 job.location,
@@ -433,6 +460,7 @@ async def create_job(job: JobCreate):
         except sqlite3.Error as e:
             raise HTTPException(status_code=400, detail=str(e))
 
+
 @app.post("/applicants", response_model=ApplicantCreate)
 async def create_applicant(applicant: ApplicantCreate):
     with get_db() as conn:
@@ -447,7 +475,7 @@ async def create_applicant(applicant: ApplicantCreate):
         user_query = """
         INSERT INTO Users (
             email, password_hash, name, phone_number, address, linkedin, 
-            disability_type, user_type
+            social_group, user_type
         ) VALUES (?, ?, ?, ?, ?, ?, ?, 'applicant')
         """
         
@@ -505,3 +533,50 @@ async def create_applicant(applicant: ApplicantCreate):
             
         except sqlite3.Error as e:
             raise HTTPException(status_code=400, detail=str(e))
+        
+
+@app.get("/users/businesses", response_model=List[dict])
+async def get_business_users():
+    with get_db() as conn:
+        cursor = conn.cursor()
+        query = "SELECT * FROM Users WHERE user_type = 'business';"
+        cursor.execute(query)
+        results = cursor.fetchall()
+        return [dict(row) for row in results]
+    
+@app.put("/jobs/{job_id}")
+async def update_job(job_id: int, job: JobUpdate):
+    with get_db() as conn:
+        cursor = conn.cursor()
+
+        # Verifica se a vaga existe
+        cursor.execute("SELECT * FROM Jobs WHERE job_id = ?", (job_id,))
+        existing_job = cursor.fetchone()
+        if not existing_job:
+            raise HTTPException(status_code=404, detail="Job not found")
+
+        # Atualiza os campos fornecidos
+        update_data = {key: value for key, value in job.dict().items() if value is not None}
+
+        # Converte `social_group` para JSON, se necessário
+        if "social_group" in update_data:
+            update_data["social_group"] = json.dumps(update_data["social_group"])
+
+        # Verifica se há algo para atualizar
+        if not update_data:
+            raise HTTPException(status_code=400, detail="No fields to update")
+
+        # Atualiza os dados no banco de dados
+        update_query = ", ".join([f"{key} = ?" for key in update_data.keys()])
+        values = list(update_data.values()) + [job_id]
+
+        try:
+            cursor.execute(
+                f"UPDATE Jobs SET {update_query} WHERE job_id = ?",
+                values
+            )
+            conn.commit()
+        except sqlite3.Error as e:
+            raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+    return {"message": "Job updated successfully"}
