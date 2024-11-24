@@ -76,17 +76,17 @@ export default function VisualizarPerfilCandidato() {
           <span className="sr-only">Diversity Jobs</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/empresa">
             Início
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Vagas
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/vagas-criadas">
+            Minhas Vagas
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Sobre Nós
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/canditaturas">
+            Candidaturas
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Contato
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/">
+            Sair
           </Link>
         </nav>
       </header>
@@ -94,7 +94,7 @@ export default function VisualizarPerfilCandidato() {
         <div className="container px-4 md:px-6">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-              Perfil do Candidato
+              Buscar Candidato
             </h1>
           </div>
 

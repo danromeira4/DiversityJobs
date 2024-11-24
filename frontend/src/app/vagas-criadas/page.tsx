@@ -146,17 +146,17 @@ export default function DashboardEmpresa() {
           <span className="ml-2 text-lg font-semibold">Empresas</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Dashboard
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/empresa">
+            Início
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Candidatos
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/vagas-criadas">
+            Minhas Vagas
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Relatórios
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/canditaturas">
+            Candidaturas
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Configurações
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/">
+            Sair
           </Link>
         </nav>
       </header>

@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from contextlib import contextmanager
 from fastapi.middleware.cors import CORSMiddleware
 import json
+import datetime
 
 
 app = FastAPI()
@@ -111,6 +112,10 @@ class JobUpdate(BaseModel):
     application_deadline: Optional[str] = None  # Campo para o prazo de aplicação
     application_process: Optional[str] = None
     social_group: Optional[list[str]] = None  # Aceita uma lista de strings
+
+class JobApplication(BaseModel):
+    applicant_email: str
+
 
 # 1. Get applicant information with resume
 @app.get("/applicants/{email}", response_model=Applicant)
@@ -600,3 +605,70 @@ async def delete_job(job_id: int):
             raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
     return {"message": "Job deleted successfully"}
+
+@app.post("/jobs/{job_id}/apply")
+async def apply_for_job(job_id: int, application: JobApplication):
+    """
+    Permite que um candidato aplique para uma vaga usando o ID da vaga e seu e-mail.
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+
+        try:
+            # Verificar se o candidato existe
+            print("Verificando candidato...")
+            applicant_query = """
+            SELECT user_id
+            FROM Users
+            WHERE email = ? AND user_type = 'applicant'
+            """
+            cursor.execute(applicant_query, (application.applicant_email,))
+            applicant = cursor.fetchone()
+            print("Candidato encontrado:", applicant)
+
+            if not applicant:
+                raise HTTPException(status_code=404, detail="Applicant not found")
+            applicant_id = applicant['user_id']
+
+            # Verificar se a vaga existe
+            print("Verificando vaga...")
+            job_query = """
+            SELECT job_id
+            FROM Jobs
+            WHERE job_id = ?
+            """
+            cursor.execute(job_query, (job_id,))
+            job = cursor.fetchone()
+            print("Vaga encontrada:", job)
+
+            if not job:
+                raise HTTPException(status_code=404, detail="Job not found")
+
+            # Verificar se o candidato já aplicou
+            print("Verificando aplicação existente...")
+            application_check_query = """
+            SELECT *
+            FROM Applications
+            WHERE user_id = ? AND job_id = ?
+            """
+            cursor.execute(application_check_query, (applicant_id, job_id))
+            existing_application = cursor.fetchone()
+            print("Aplicação existente:", existing_application)
+
+            if existing_application:
+                raise HTTPException(status_code=400, detail="Applicant already applied for this job")
+
+            # Inserir nova aplicação
+            print("Inserindo aplicação...")
+            apply_query = """
+            INSERT INTO Applications (user_id, job_id, application_date, status)
+            VALUES (?, ?, CURRENT_TIMESTAMP, 'pending')
+            """
+            cursor.execute(apply_query, (applicant_id, job_id))
+            conn.commit()
+            print("Aplicação inserida com sucesso.")
+            return {"message": "Application submitted successfully"}
+
+        except sqlite3.Error as e:
+            print("Erro no SQLite:", str(e))
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

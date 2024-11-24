@@ -1,7 +1,6 @@
 'use client'
 
-import React from 'react'
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -27,6 +26,9 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
   const [job, setJob] = useState<Job | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+
+  // Email fixo "john@example.com"
+  const applicantEmail = "john@example.com"
 
   useEffect(() => {
     if (!resolvedParams.id) return
@@ -61,6 +63,36 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
 
     fetchJob()
   }, [resolvedParams.id, router])
+
+  const handleApply = async () => {
+    if (!job) {
+      alert("Dados inválidos. Por favor, verifique a vaga.")
+      return
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/jobs/${job.job_id}/apply`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ applicant_email: applicantEmail }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || "Falha ao se candidatar")
+      }
+
+      alert("Candidatura realizada com sucesso!")
+
+      // Redirecionar para a página de vagas
+      router.push('/jobs')
+    } catch (error) {
+      console.error("Error applying for job:", error)
+      alert(`Erro: ${(error as Error).message}`)
+    }
+  }
 
   if (isLoading) {
     return <LoadingSkeleton />
@@ -107,7 +139,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
             </div>
           </CardContent>
           <CardFooter className="flex justify-center p-6 bg-muted">
-            <Button size="lg" className="w-full sm:w-auto">
+            <Button size="lg" className="w-full sm:w-auto" onClick={handleApply}>
               Candidatar-se
             </Button>
           </CardFooter>
@@ -163,4 +195,3 @@ function LoadingSkeleton() {
     </div>
   )
 }
-

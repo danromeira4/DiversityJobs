@@ -15,11 +15,14 @@ export default function HomePage() {
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/perfil">
             Perfil
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/jobs">
-            Vagas
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/vagas-criadas">
+            Minhas Vagas
           </Link>
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/candidaturas">
             Candidaturas
+          </Link>
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/">
+            Sair
           </Link>
         </nav>
       </header>

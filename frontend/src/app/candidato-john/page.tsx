@@ -18,8 +18,11 @@ export default function HomePage() {
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/jobs">
             Vagas
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/candidaturas">
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/candidaturas-john">
             Candidaturas
+          </Link>
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/">
+            Sair
           </Link>
         </nav>
       </header>
@@ -40,7 +43,7 @@ export default function HomePage() {
                   <Link href="/jobs">Buscar Vagas</Link>
                 </Button>
                 <Button asChild variant="outline" className="bg-transparent text-white border-white hover:bg-white hover:text-purple-600">
-                  <Link href="/candidaturas">Acompanhar Candidaturas</Link>
+                  <Link href="/candidaturas-john">Acompanhar Candidaturas</Link>
                 </Button>
               </div>
             </div>
