@@ -112,12 +112,6 @@ export default function RegistroUsuario() {
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/">
             Início
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/sobre">
-            Sobre Nós
-          </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/contato">
-            Contato
-          </Link>
         </nav>
       </header>
       <main className="flex-1 py-12 md:py-24 lg:py-32">

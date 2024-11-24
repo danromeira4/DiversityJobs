@@ -152,9 +152,6 @@ export default function DashboardEmpresa() {
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/vagas-criadas">
             Minhas Vagas
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/canditaturas">
-            Candidaturas
-          </Link>
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/">
             Sair
           </Link>
@@ -180,7 +177,7 @@ export default function DashboardEmpresa() {
                 </div>
               </div>
               <Dialog>
-                <DialogTrigger asChild>
+                <DialogTrigger asChild id='criar-vaga'>
                   <Button>
                     <Plus className="mr-2 h-4 w-4" /> Criar Nova Vaga
                   </Button>

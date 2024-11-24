@@ -79,17 +79,8 @@ export default function JobsPage() {
           <span className="sr-only">Diversity Jobs</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Início
-          </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Sobre Nós
-          </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Recursos
-          </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Contato
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/">
+            Sair
           </Link>
         </nav>
       </header>

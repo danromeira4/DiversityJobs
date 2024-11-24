@@ -108,17 +108,11 @@ export default function HomePage() {
                 <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Crie seu perfil, mostre suas habilidades e conecte-se com empregadores que valorizam diversidade e inclusão. Nossa plataforma facilita encontrar e se candidatar a vagas que estejam alinhadas com seus valores e metas de carreira.
                 </p>
-                <Link
-                  className="inline-flex h-9 items-center justify-center rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50"
-                  href="#"
-                >
-                  Saiba Mais <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
               </div>
             </div>
           </div>
         </section>
-        <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100">
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100" id='sobre'>
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
