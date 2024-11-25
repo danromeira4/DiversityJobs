@@ -64,11 +64,10 @@ export default function JobsPage() {
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           job.company.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesJobType = selectedJobType === "" || job.type === selectedJobType
     const matchesTags = selectedTags.length === 0 || selectedTags.some(tag => job.tags.includes(tag))
     const matchesCity = selectedCity === "" || job.location === selectedCity
   
-    return matchesSearch && matchesJobType && matchesTags && matchesCity
+    return matchesSearch && matchesTags && matchesCity
   })
   
   return (
@@ -105,36 +104,6 @@ export default function JobsPage() {
                   <CardTitle className="text-2xl font-bold">Filtros</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="job-type">Tipo de Trabalho</Label>
-                    <Select onValueChange={handleJobTypeChange}>
-                      <SelectTrigger id="job-type">
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos os Tipos</SelectItem>
-                        <SelectItem value="Presencial">Presencial</SelectItem>
-                        <SelectItem value="Híbrido">Híbrido</SelectItem>
-                        <SelectItem value="Remoto">Remoto</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="job-contract">Tipo de Contrato</Label>
-                    <Select onValueChange={handleJobTypeChange}>
-                      <SelectTrigger id="job-contract">
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos os Tipos</SelectItem>
-                        <SelectItem value="Integral">Integral</SelectItem>
-                        <SelectItem value="Estágio">Estágio</SelectItem>
-                        <SelectItem value="Meio período">Meio período</SelectItem>
-                        <SelectItem value="Temporário">Temporário</SelectItem>
-                        <SelectItem value="Freelancer">Freelance</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="city">Cidade</Label>
                     <Select onValueChange={(value) => setSelectedCity(value === "all" ? "" : value)}>

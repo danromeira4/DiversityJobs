@@ -672,3 +672,82 @@ async def apply_for_job(job_id: int, application: JobApplication):
         except sqlite3.Error as e:
             print("Erro no SQLite:", str(e))
             raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        
+@app.put("/applicants/{email}")
+async def update_applicant(email: str, applicant: ApplicantCreate):
+    with get_db() as conn:
+        cursor = conn.cursor()
+
+        # Verify applicant exists
+        cursor.execute("SELECT user_id FROM Users WHERE email = ? AND user_type = 'applicant'", (email,))
+        existing_user = cursor.fetchone()
+        if not existing_user:
+            raise HTTPException(status_code=404, detail="Applicant not found")
+        
+        user_id = existing_user['user_id']
+
+        # Update Users table
+        update_user_query = """
+        UPDATE Users SET 
+            name = ?, 
+            phone_number = ?, 
+            address = ?, 
+            linkedin = ?, 
+            social_group = ?
+        WHERE user_id = ?
+        """
+        
+        # Update Resume table
+        update_resume_query = """
+        UPDATE Resumes SET 
+            summary = ?, 
+            experience = ?, 
+            education = ?, 
+            skills = ?
+        WHERE user_id = ?
+        """
+
+        try:
+            # Update Users
+            cursor.execute(update_user_query, (
+                applicant.nome,
+                applicant.telefone,
+                applicant.localizacao,
+                applicant.linkedin,
+                ','.join(applicant.grupoSocial) if applicant.grupoSocial else None,
+                user_id
+            ))
+
+            # Format experiences, education and skills as strings
+            experiencias_str = None
+            if applicant.experiencias:
+                experiencias_str = ','.join(
+                    f"{exp['tempo']}:{exp['empresa']}" 
+                    for exp in applicant.experiencias
+                )
+            
+            formacoes_str = None
+            if applicant.formacoes:
+                formacoes_str = ','.join(
+                    f"{form['tempo']}:{form['instituicao']}" 
+                    for form in applicant.formacoes
+                )
+            
+            habilidades_str = None
+            if applicant.habilidades:
+                habilidades_str = ','.join(applicant.habilidades)
+
+            # Update Resumes
+            cursor.execute(update_resume_query, (
+                applicant.resumoProfissional,
+                experiencias_str,
+                formacoes_str,
+                habilidades_str,
+                user_id
+            ))
+
+            conn.commit()
+            return {"message": "Applicant updated successfully"}
+            
+        except sqlite3.Error as e:
+            raise HTTPException(status_code=400, detail=str(e))

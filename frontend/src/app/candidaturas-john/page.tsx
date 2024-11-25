@@ -7,7 +7,9 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Briefcase, Building2, MapPin, Calendar, Clock } from "lucide-react"
+import { Briefcase, Building2, MapPin, Calendar, Clock, DollarSign, FileText, GraduationCap, Users } from 'lucide-react'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface Application {
   id: number;
@@ -19,10 +21,25 @@ interface Application {
   tipo: string;
 }
 
+interface JobDetails {
+  job_id: number;
+  business_id: number;
+  social_group: string[];
+  job_title: string;
+  job_description: string;
+  location: string;
+  salary_range: string;
+  requirements: string;
+  posted_date: string;
+  application_deadline: string;
+  application_process: string;
+}
+
 export default function Candidaturas() {
   const [filtroStatus, setFiltroStatus] = useState("todos")
   const [applications, setApplications] = useState<Application[]>([])
   const [error, setError] = useState('')
+  const [selectedJob, setSelectedJob] = useState<JobDetails | null>(null)
   const applicantEmail = "john@example.com" // Email fixo do candidato
 
   useEffect(() => {
@@ -45,6 +62,20 @@ export default function Candidaturas() {
     fetchApplications()
   }, [applicantEmail])
 
+  const fetchJobDetails = async (jobId: number) => {
+    try {
+      const response = await fetch(`http://localhost:8000/jobs/${jobId}`)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch job details: ${response.status}`)
+      }
+      const data = await response.json()
+      setSelectedJob(data)
+    } catch (err) {
+      console.error('Error fetching job details:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch job details')
+    }
+  }
+
   const applicationsFiltradas = applications.filter(application =>
     filtroStatus === "todos" || application.status === filtroStatus
   )
@@ -53,9 +84,9 @@ export default function Candidaturas() {
     switch (status) {
       case "Em análise":
         return "bg-yellow-100 text-yellow-800"
-      case "Entrevista agendada":
+      case "Entrevista marcada":
         return "bg-blue-100 text-blue-800"
-      case "Rejeitado":
+      case "Recusado":
         return "bg-red-100 text-red-800"
       case "Aprovado":
         return "bg-green-100 text-green-800"
@@ -107,9 +138,9 @@ export default function Candidaturas() {
                     <SelectContent>
                       <SelectItem value="todos">Todos os status</SelectItem>
                       <SelectItem value="Em análise">Em análise</SelectItem>
-                      <SelectItem value="Entrevista agendada">Entrevista agendada</SelectItem>
+                      <SelectItem value="Entrevista marcada">Entrevista marcada</SelectItem>
                       <SelectItem value="Aprovado">Aprovado</SelectItem>
-                      <SelectItem value="Rejeitado">Rejeitado</SelectItem>
+                      <SelectItem value="Recusado">Recusado</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button variant="outline">Exportar Relatório</Button>
@@ -156,7 +187,77 @@ export default function Candidaturas() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="sm">Ver Detalhes</Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="sm" onClick={() => fetchJobDetails(application.id)}>
+                                Ver Detalhes
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[600px]">
+                              <DialogHeader>
+                                <DialogTitle className="text-2xl font-bold">{selectedJob?.job_title}</DialogTitle>
+                                <DialogDescription>Detalhes da vaga</DialogDescription>
+                              </DialogHeader>
+                              <ScrollArea className="h-[60vh] w-full p-4">
+                                {selectedJob ? (
+                                  <div className="space-y-6">
+                                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                                      <Building2 className="h-4 w-4" />
+                                      <span>{selectedJob.location}</span>
+                                      <span>•</span>
+                                      <DollarSign className="h-4 w-4" />
+                                      <span>{selectedJob.salary_range}</span>
+                                    </div>
+                                    <div>
+                                      <h3 className="text-lg font-semibold mb-2 flex items-center">
+                                        <FileText className="mr-2 h-5 w-5" />
+                                        Descrição
+                                      </h3>
+                                      <p className="text-sm text-gray-600">{selectedJob.job_description}</p>
+                                    </div>
+                                    <div>
+                                      <h3 className="text-lg font-semibold mb-2 flex items-center">
+                                        <GraduationCap className="mr-2 h-5 w-5" />
+                                        Requisitos
+                                      </h3>
+                                      <p className="text-sm text-gray-600">{selectedJob.requirements}</p>
+                                    </div>
+                                    <div>
+                                      <h3 className="text-sm font-semibold mb-1 flex items-center">
+                                        <Calendar className="mr-2 h-4 w-4" />
+                                        Data de Publicação
+                                      </h3>
+                                      <p className="text-sm text-gray-600">
+                                        {new Date(selectedJob.posted_date).toLocaleDateString('pt-BR')}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <h3 className="text-lg font-semibold mb-2 flex items-center">
+                                        <Briefcase className="mr-2 h-5 w-5" />
+                                        Processo de Candidatura
+                                      </h3>
+                                      <p className="text-sm text-gray-600">{selectedJob.application_process}</p>
+                                    </div>
+                                    <div>
+                                      <h3 className="text-lg font-semibold mb-2 flex items-center">
+                                        <Users className="mr-2 h-5 w-5" />
+                                        Grupos Sociais
+                                      </h3>
+                                      <div className="flex flex-wrap gap-2">
+                                        {selectedJob.social_group.map((group, index) => (
+                                          <Badge key={index} variant="secondary">{group}</Badge>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-center h-full">
+                                    <p className="text-muted-foreground">Carregando detalhes da vaga...</p>
+                                  </div>
+                                )}
+                              </ScrollArea>
+                            </DialogContent>
+                          </Dialog>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -188,3 +289,4 @@ export default function Candidaturas() {
     </div>
   )
 }
+

@@ -2,18 +2,19 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Briefcase, Mail, Phone, MapPin, Linkedin, Lock, Plus, Trash2 } from "lucide-react"
-import { useRouter } from 'next/navigation'
+import { Checkbox } from "@/components/ui/checkbox"
+import { Briefcase, Plus, Trash2 } from 'lucide-react'
 
 export default function RegistroUsuario() {
   const router = useRouter()
-  const [userType, setUserType] = useState('applicant') // Tipo de usuário: candidato ou empresa
+  const [userType, setUserType] = useState('applicant')
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -21,12 +22,13 @@ export default function RegistroUsuario() {
     telefone: '',
     localizacao: '',
     linkedin: '',
-    businessName: '', // Nome da empresa (somente para empresas)
-    businessDescription: '', // Descrição da empresa
-    industry: '', // Setor de atuação da empresa
-    resumoProfissional: '', // Apenas para candidatos
-    habilidades: [] as string[], // Apenas para candidatos
-    disabilityType: '', // Apenas para candidatos
+    businessName: '',
+    businessDescription: '',
+    industry: '',
+    resumoProfissional: '',
+    habilidades: [] as string[],
+    disabilityType: '',
+    social_group: [] as string[],
   })
 
   const [experiencias, setExperiencias] = useState([
@@ -75,6 +77,7 @@ export default function RegistroUsuario() {
       resumo_profissional: userType === 'applicant' ? formData.resumoProfissional : null,
       habilidades: userType === 'applicant' ? formData.habilidades : null,
       disability_type: userType === 'applicant' ? formData.disabilityType : null,
+      social_group: userType === 'applicant' ? formData.social_group : null,
       experiencias: userType === 'applicant' ? experiencias : null,
       formacoes: userType === 'applicant' ? formacoes : null,
     }
@@ -89,7 +92,7 @@ export default function RegistroUsuario() {
       })
 
       if (response.ok) {
-        router.push('/') // Redireciona para a página inicial
+        router.push('/')
       } else {
         const errorData = await response.json()
         console.error('Erro ao registrar usuário:', errorData.detail)
@@ -126,7 +129,7 @@ export default function RegistroUsuario() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Label>Tipo de Usuário</Label>
-              <Select onValueChange={setUserType}>
+              <Select onValueChange={setUserType} defaultValue={userType}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o tipo de usuário" />
                 </SelectTrigger>
@@ -182,7 +185,7 @@ export default function RegistroUsuario() {
                 </CardHeader>
                 <CardContent>
                   {experiencias.map((exp) => (
-                    <div key={exp.id}>
+                    <div key={exp.id} className="flex items-center space-x-2 mb-2">
                       <Input
                         placeholder="Período"
                         value={exp.tempo}
@@ -203,11 +206,37 @@ export default function RegistroUsuario() {
                           setExperiencias(updatedExperiences)
                         }}
                       />
-                      <Button onClick={() => removerExperiencia(exp.id)} variant="ghost">
+                      <Button onClick={() => removerExperiencia(exp.id)} variant="ghost" size="icon">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   ))}
+                </CardContent>
+              </Card>
+              <Card className="p-6 mt-6">
+                <CardHeader>
+                  <CardTitle className="text-2xl font-bold">Grupos Sociais</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    {["LGBTQIA+", "Mulheres", "Pessoas Negras", "PCD", "Neurodiversidade", "Profissional 50+", "Outros"].map((group) => (
+                      <div key={group} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`social_group_${group}`}
+                          checked={formData.social_group.includes(group)}
+                          onCheckedChange={(checked) => {
+                            setFormData(prev => ({
+                              ...prev,
+                              social_group: checked
+                                ? [...prev.social_group, group]
+                                : prev.social_group.filter(g => g !== group)
+                            }))
+                          }}
+                        />
+                        <Label htmlFor={`social_group_${group}`}>{group}</Label>
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             </>
@@ -245,3 +274,4 @@ export default function RegistroUsuario() {
     </div>
   )
 }
+
