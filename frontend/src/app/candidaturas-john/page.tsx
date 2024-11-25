@@ -75,11 +75,11 @@ export default function Candidaturas() {
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/candidato-john">
             Início
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/jobs">
-            Vagas
-          </Link>
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/perfil">
             Perfil
+          </Link>
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/jobs">
+            Vagas
           </Link>
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/">
             Sair

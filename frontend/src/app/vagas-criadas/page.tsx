@@ -152,7 +152,7 @@ export default function DashboardEmpresa() {
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/vagas-criadas">
             Minhas Vagas
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/canditaturas">
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/candidaturas">
             Candidaturas
           </Link>
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/">

@@ -78,17 +78,17 @@ export default function VisualizarPerfilCandidato() {
           <span className="sr-only">Diversity Jobs</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/">
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/candidato-john">
             Início
           </Link>
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/jobs">
             Vagas
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/sobre">
-            Sobre Nós
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/candidaturas-john">
+            Candidaturas
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/contato">
-            Contato
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/">
+            Sair
           </Link>
         </nav>
       </header>

@@ -12,15 +12,15 @@ export default function HomePage() {
           <span className="sr-only">Diversity Jobs</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/perfil">
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/perfil-empresa">
             Perfil
           </Link>
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/vagas-criadas">
             Minhas Vagas
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/candidaturas">
+          {/* <Link className="text-sm font-medium hover:underline underline-offset-4" href="/candidaturas">
             Candidaturas
-          </Link>
+          </Link> */}
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/">
             Sair
           </Link>
@@ -39,11 +39,8 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="space-x-4">
-                <Button asChild className="bg-white text-purple-600 hover:bg-gray-100">
-                  <Link href="/jobs">Buscar Vagas</Link>
-                </Button>
                 <Button asChild variant="outline" className="bg-transparent text-white border-white hover:bg-white hover:text-purple-600">
-                  <Link href="#">Publicar Vagas</Link>
+                  <Link href="/vagas-criadas">Publicar Vagas</Link>
                 </Button>
               </div>
             </div>
