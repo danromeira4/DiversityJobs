@@ -36,9 +36,6 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="space-x-4">
-                <Button asChild className="bg-white text-purple-600 hover:bg-gray-100">
-                  <Link href="/jobs">Buscar Vagas</Link>
-                </Button>
                 <Button asChild variant="outline" className="bg-transparent text-white border-white hover:bg-white hover:text-purple-600">
                   <Link href="/vagas-criadas">Publicar Vagas</Link>
                 </Button>

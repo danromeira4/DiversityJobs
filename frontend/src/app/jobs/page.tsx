@@ -79,6 +79,15 @@ export default function JobsPage() {
           <span className="sr-only">Diversity Jobs</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/candidato-john">
+            Início
+          </Link>
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/perfil">
+            Perfil
+          </Link>
+          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/candidaturas-john">
+            Candidaturas
+          </Link>
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="/">
             Sair
           </Link>
@@ -107,6 +116,22 @@ export default function JobsPage() {
                         <SelectItem value="Presencial">Presencial</SelectItem>
                         <SelectItem value="Híbrido">Híbrido</SelectItem>
                         <SelectItem value="Remoto">Remoto</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="job-contract">Tipo de Contrato</Label>
+                    <Select onValueChange={handleJobTypeChange}>
+                      <SelectTrigger id="job-contract">
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os Tipos</SelectItem>
+                        <SelectItem value="Integral">Integral</SelectItem>
+                        <SelectItem value="Estágio">Estágio</SelectItem>
+                        <SelectItem value="Meio período">Meio período</SelectItem>
+                        <SelectItem value="Temporário">Temporário</SelectItem>
+                        <SelectItem value="Freelancer">Freelance</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

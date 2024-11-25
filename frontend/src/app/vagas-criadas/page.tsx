@@ -7,7 +7,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Briefcase, Building2, MapPin, Calendar, Clock, Plus } from "lucide-react"
+import { Briefcase, Building2, MapPin, Calendar, Clock, Plus, Search, X } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -16,10 +16,12 @@ import { Label } from "@/components/ui/label"
 
 export default function DashboardEmpresa() {
   const [filtroStatus, setFiltroStatus] = useState("todos")
+  const [filtroNome, setFiltroNome] = useState("")
+  const [filtroGruposSociais, setFiltroGruposSociais] = useState<string[]>([])
   const [vagasEmpresa, setVagasEmpresa] = useState([])
-  const [businessEmail, setBusinessEmail] = useState("business@example.com")
+  const businessEmail = "tech@company.com" // Email fixo do business
   const [novaVaga, setNovaVaga] = useState({
-    business_email: "business@example.com", // Changed from business_id to business_email
+    business_email: businessEmail,
     job_title: "",
     job_description: "",
     location: "",
@@ -31,6 +33,8 @@ export default function DashboardEmpresa() {
     posted_date: new Date().toISOString().split('T')[0]
   })
 
+  const gruposSociais = ["LGBTQIA+", "Mulheres", "Pessoas Negras", "PCD", "Neurodiversidade", "Profissional 50+", "Outros"]
+
   useEffect(() => {
     const fetchJobs = async () => {
       try {
@@ -38,6 +42,8 @@ export default function DashboardEmpresa() {
         if (response.ok) {
           const jobs = await response.json()
           setVagasEmpresa(jobs)
+        } else {
+          console.error('Failed to fetch jobs:', response.status, response.statusText)
         }
       } catch (error) {
         console.error('Error fetching jobs:', error)
@@ -47,8 +53,10 @@ export default function DashboardEmpresa() {
     fetchJobs()
   }, [businessEmail])
 
-  const vagasFiltradas = vagasEmpresa.filter(vaga => 
-    filtroStatus === "todos" || vaga.status === filtroStatus
+  const vagasFiltradas = vagasEmpresa.filter(vaga =>
+    (filtroStatus === "todos" || vaga.status === filtroStatus) &&
+    (filtroNome === "" || vaga.job_title.toLowerCase().includes(filtroNome.toLowerCase())) &&
+    (filtroGruposSociais.length === 0 || filtroGruposSociais.some(grupo => vaga.social_group.includes(grupo)))
   )
 
   const getStatusColor = (status: string) => {
@@ -71,71 +79,60 @@ export default function DashboardEmpresa() {
 
   const handleCheckboxChange = (type: string) => {
     setNovaVaga((prev) => {
-      const isSelected = prev.social_group.includes(type);
+      const isSelected = prev.social_group.includes(type)
       return {
         ...prev,
         social_group: isSelected
-          ? prev.social_group.filter((item) => item !== type) // Remove se já estiver selecionado
-          : [...prev.social_group, type], // Adiciona se ainda não estiver selecionado
-      };
-    });
-  };
-  
+          ? prev.social_group.filter((item) => item !== type)
+          : [...prev.social_group, type]
+      }
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // Update business_email before submitting
-    const jobData = {
-      ...novaVaga,
-      business_email: businessEmail
-    }
-    
     try {
       const response = await fetch('http://localhost:8000/jobs', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(jobData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(novaVaga),
       })
 
       if (response.ok) {
-        try {
-          // Refresh jobs list
-          const jobsResponse = await fetch(`http://localhost:8000/businesses/${businessEmail}/jobs`)
-          if (!jobsResponse.ok) {
-            throw new Error(`Failed to fetch jobs: ${jobsResponse.status} ${jobsResponse.statusText}`)
-          }
+        const jobsResponse = await fetch(`http://localhost:8000/businesses/${businessEmail}/jobs`)
+        if (jobsResponse.ok) {
           const jobs = await jobsResponse.json()
           setVagasEmpresa(jobs)
-
-          // Reset form
           setNovaVaga({
             business_email: businessEmail,
             job_title: "",
-            job_description: "", 
+            job_description: "",
             location: "",
             salary_range: "",
             requirements: "",
             application_deadline: "",
             application_process: "",
-            social_group: [] as string[],
+            social_group: [],
             posted_date: new Date().toISOString().split('T')[0]
           })
-        } catch (error) {
-          console.error('Error refreshing jobs list:', error)
+        } else {
+          console.error('Failed to refresh jobs:', jobsResponse.status, jobsResponse.statusText)
         }
       } else {
         const errorData = await response.json().catch(() => null)
-        console.error('Error creating job:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData
-        })
+        console.error('Error creating job:', errorData)
       }
     } catch (error) {
       console.error('Error:', error)
     }
+  }
+
+  const handleGrupoSocialChange = (grupo: string) => {
+    setFiltroGruposSociais(prev =>
+      prev.includes(grupo)
+        ? prev.filter(g => g !== grupo)
+        : [...prev, grupo]
+    )
   }
 
   return (
@@ -161,23 +158,11 @@ export default function DashboardEmpresa() {
         <section className="w-full py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6">
             <div className="flex justify-between items-center mb-8">
-              <div className="flex items-center gap-4">
-                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
-                  Dashboard de Vagas
-                </h1>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="email-input">Email da Empresa:</Label>
-                  <Input
-                    id="email-input"
-                    type="email"
-                    value={businessEmail}
-                    onChange={(e) => setBusinessEmail(e.target.value)}
-                    className="w-[300px]"
-                  />
-                </div>
-              </div>
+              <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+                Minhas Vagas
+              </h1>
               <Dialog>
-                <DialogTrigger asChild id='criar-vaga'>
+                <DialogTrigger asChild>
                   <Button>
                     <Plus className="mr-2 h-4 w-4" /> Criar Nova Vaga
                   </Button>
@@ -186,103 +171,23 @@ export default function DashboardEmpresa() {
                   <DialogHeader>
                     <DialogTitle>Criar Nova Vaga</DialogTitle>
                   </DialogHeader>
-                  <form onSubmit={handleSubmit} className="space-y-4 grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
-                      <Label htmlFor="business_email">Email da Empresa</Label>
-                      <Input
-                        id="business_email"
-                        value={businessEmail}
-                        onChange={(e) => setBusinessEmail(e.target.value)}
-                        required
-                      />
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <Input name="job_title" placeholder="Título da Vaga" value={novaVaga.job_title} onChange={handleInputChange} required />
+                    <Textarea name="job_description" placeholder="Descrição" value={novaVaga.job_description} onChange={handleInputChange} required />
+                    <Input name="location" placeholder="Localização" value={novaVaga.location} onChange={handleInputChange} required />
+                    <Input name="salary_range" placeholder="Faixa Salarial" value={novaVaga.salary_range} onChange={handleInputChange} required />
+                    <Textarea name="requirements" placeholder="Requisitos" value={novaVaga.requirements} onChange={handleInputChange} required />
+                    <Input name="application_deadline" type="date" value={novaVaga.application_deadline} onChange={handleInputChange} required />
+                    <Input name="application_process" placeholder="Processo de Aplicação" value={novaVaga.application_process} onChange={handleInputChange} required />
+                    <div className="grid grid-cols-3 gap-2">
+                      {gruposSociais.map(type => (
+                        <div key={type} className="flex items-center space-x-2">
+                          <Checkbox id={type} checked={novaVaga.social_group.includes(type)} onCheckedChange={() => handleCheckboxChange(type)} />
+                          <Label htmlFor={type}>{type}</Label>
+                        </div>
+                      ))}
                     </div>
-                    <div className="col-span-2">
-                      <Label htmlFor="job_title">Título da Vaga</Label>
-                      <Input
-                        id="job_title"
-                        name="job_title"
-                        value={novaVaga.job_title}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <Label htmlFor="job_description">Descrição da Vaga</Label>
-                      <Textarea
-                        id="job_description"
-                        name="job_description"
-                        value={novaVaga.job_description}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="location">Localização</Label>
-                      <Input
-                        id="location"
-                        name="location"
-                        value={novaVaga.location}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="salary_range">Faixa Salarial</Label>
-                      <Input
-                        id="salary_range"
-                        name="salary_range"
-                        value={novaVaga.salary_range}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <Label htmlFor="requirements">Requisitos</Label>
-                      <Textarea
-                        id="requirements"
-                        name="requirements"
-                        value={novaVaga.requirements}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="application_deadline">Prazo de Inscrição</Label>
-                      <Input
-                        id="application_deadline"
-                        name="application_deadline"
-                        type="date"
-                        value={novaVaga.application_deadline}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="application_process">Método de Aplicação</Label>
-                      <Input
-                        id="application_process"
-                        name="application_process"
-                        value={novaVaga.application_process}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <Label>Grupo Social</Label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {["LGBTQIA+", "Mulheres", "Pessoas Negras", "PCD", "Neurodiversidade", "Profissional 50+","Outros"].map((type) => (
-                          <div key={type} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={type}
-                          checked={novaVaga.social_group.includes(type)} // Verifica se o tipo está no array
-                          onCheckedChange={() => handleCheckboxChange(type)} // Adiciona ou remove o tipo do array
-                        />
-                            <Label htmlFor={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <Button type="submit" className="col-span-2">Criar Vaga</Button>
+                    <Button type="submit">Criar</Button>
                   </form>
                 </DialogContent>
               </Dialog>
@@ -292,7 +197,15 @@ export default function DashboardEmpresa() {
                 <CardTitle>Gerenciar Vagas</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-wrap gap-4 mb-6">
+                  <div className="flex-1 min-w-[200px]">
+                    <Input
+                      placeholder="Buscar por nome da vaga"
+                      value={filtroNome}
+                      onChange={(e) => setFiltroNome(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
                   <Select value={filtroStatus} onValueChange={setFiltroStatus}>
                     <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder="Filtrar por status" />
@@ -304,6 +217,35 @@ export default function DashboardEmpresa() {
                       <SelectItem value="Fechada">Fechada</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Select
+                    onValueChange={(value) => handleGrupoSocialChange(value)}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Grupos Sociais" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {gruposSociais.map((grupo) => (
+                        <SelectItem key={grupo} value={grupo}>
+                          {grupo}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex flex-wrap gap-2">
+                    {filtroGruposSociais.map((grupo) => (
+                      <Badge key={grupo} variant="secondary" className="px-2 py-1">
+                        {grupo}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-2 h-auto p-0"
+                          onClick={() => handleGrupoSocialChange(grupo)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
                   <Button variant="outline">Exportar Relatório</Button>
                 </div>
                 <Table>
@@ -374,17 +316,10 @@ export default function DashboardEmpresa() {
           </div>
         </section>
       </main>
-      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-gray-500">© 2024 TechCorp. Todos os direitos reservados.</p>
-        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-xs hover:underline underline-offset-4" href="#">
-            Termos de Serviço
-          </Link>
-          <Link className="text-xs hover:underline underline-offset-4" href="#">
-            Política de Privacidade
-          </Link>
-        </nav>
+      <footer className="py-6 px-4 border-t">
+        <p className="text-center text-sm text-gray-500">© 2024 TechCorp. Todos os direitos reservados.</p>
       </footer>
     </div>
   )
 }
+
