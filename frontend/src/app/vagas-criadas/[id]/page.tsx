@@ -47,6 +47,30 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
   const [isEditing, setIsEditing] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const router = useRouter()
+  const [candidateDetails, setCandidateDetails] = useState<any>(null);
+
+  const fetchCandidateDetails = async (email: string) => {
+    try {
+      const response = await fetch(`http://localhost:8000/applicants/${email}`)
+      const data = await response.json()
+      return {
+        nome: data.nome,
+        email: data.email,
+        telefone: data.telefone,
+        localizacao: data.localizacao,
+        linkedin: data.linkedin,
+        grupoSocial: data.grupoSocial,
+        resumoProfissional: data.resumoProfissional,
+        experiencias: data.experiencias,
+        formacoes: data.formacoes,
+        habilidades: data.habilidades
+      }
+    } catch (error) {
+      console.error('Error fetching candidate details:', error)
+      return null
+    }
+  }
+  
 
   useEffect(() => {
     const fetchJobDetails = async () => {
@@ -63,11 +87,22 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
     }
 
     const fetchCandidates = async () => {
-      setCandidates([
-        { id: 1, name: "João Silva", email: "joao@example.com", applicationDate: "2023-05-15", status: "Em análise" },
-        { id: 2, name: "Maria Santos", email: "maria@example.com", applicationDate: "2023-05-16", status: "Entrevista" },
-        { id: 3, name: "Carlos Oliveira", email: "carlos@example.com", applicationDate: "2023-05-17", status: "Recusado" },
-      ])
+      try {
+        const response = await fetch(`http://localhost:8000/jobs/${resolvedParams.id}/candidates`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch candidates')
+        }
+        const data = await response.json()
+        setCandidates(data.map((candidate: any) => ({
+          id: candidate.id,
+          name: candidate.name,
+          email: candidate.email,
+          applicationDate: candidate.application_date,
+          status: candidate.status || 'Pendente'
+        })))
+      } catch (error) {
+        console.error('Error fetching candidates:', error)
+      }
     }
 
     fetchJobDetails()
@@ -120,6 +155,39 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
       router.refresh()
     } catch (error) {
       console.error('Error updating job:', error)
+    }
+  }
+
+  const handleCandidateStatusChange = async (candidateEmail: string, newStatus: string) => {
+    try {
+      console.log(`Updating status for ${candidateEmail} to ${newStatus}`); // Debug log
+      
+      const response = await fetch(
+        `http://localhost:8000/applications/${resolvedParams.id}/status?status=${encodeURIComponent(newStatus)}`, 
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            applicant_email: candidateEmail 
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Failed to update candidate status: ${errorData.detail || response.statusText}`);
+      }
+
+      // Update the local state with the new status
+      setCandidates(candidates.map(candidate => 
+        candidate.email === candidateEmail 
+          ? { ...candidate, status: newStatus }
+          : candidate
+      ));
+    } catch (error) {
+      console.error('Error updating candidate status:', error);
     }
   }
 
@@ -267,9 +335,6 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
               </ScrollArea>
             </DialogContent>
           </Dialog>
-          <Button variant="outline">
-            <Edit className="mr-2 h-4 w-4" />Editar Vaga
-          </Button>
         </CardFooter>
       </Card>
       <Card>
@@ -284,7 +349,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
                 <TableHead>Email</TableHead>
                 <TableHead>Data de Candidatura</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Ações</TableHead>
+                <TableHead>Detalhes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -294,10 +359,92 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
                   <TableCell>{candidate.email}</TableCell>
                   <TableCell>{new Date(candidate.applicationDate).toLocaleDateString('pt-BR')}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{candidate.status}</Badge>
+                    <Select
+                      value={candidate.status}
+                      onValueChange={(value) => handleCandidateStatusChange(candidate.email, value)}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">pending</SelectItem>
+                        <SelectItem value="reviewed">reviewed</SelectItem>
+                        <SelectItem value="accepted">accepted</SelectItem>
+                        <SelectItem value="rejected">rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="sm">Ver Detalhes</Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={async () => {
+                            const details = await fetchCandidateDetails(candidate.email)
+                            setCandidateDetails(details)
+                          }}
+                        >
+                          Ver Detalhes
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-[800px] max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Detalhes do Candidato</DialogTitle>
+                        </DialogHeader>
+                        <ScrollArea className="h-[60vh]">
+                          {!candidateDetails ? (
+                            <div>Carregando...</div>
+                          ) : (
+                            <div className="space-y-4">
+                              <div>
+                                <h3 className="font-semibold">Informações Pessoais</h3>
+                                <p>Nome: {candidateDetails.nome}</p>
+                                <p>Email: {candidateDetails.email}</p>
+                                <p>Telefone: {candidateDetails.telefone}</p>
+                                <p>Localização: {candidateDetails.localizacao}</p>
+                                <p>LinkedIn: {candidateDetails.linkedin}</p>
+                                <p>Grupo Social: {candidateDetails.grupoSocial?.join(', ')}</p>
+                              </div>
+                              
+                              <div>
+                                <h3 className="font-semibold">Resumo Profissional</h3>
+                                <p>{candidateDetails.resumoProfissional}</p>
+                              </div>
+
+                              <div>
+                                <h3 className="font-semibold">Experiências</h3>
+                                {candidateDetails.experiencias?.map((exp: any, i: number) => (
+                                  <div key={i} className="mb-2">
+                                    <p className="font-medium">{exp.empresa}</p>
+                                    <p className="text-sm text-gray-600">{exp.tempo}</p>
+                                  </div>
+                                ))}
+                              </div>
+
+                              <div>
+                                <h3 className="font-semibold">Formação</h3>
+                                {candidateDetails.formacoes?.map((form: any, i: number) => (
+                                  <div key={i} className="mb-2">
+                                    <p className="font-medium">{form.instituicao}</p>
+                                    <p className="text-sm text-gray-600">{form.tempo}</p>
+                                  </div>
+                                ))}
+                              </div>
+
+                              <div>
+                                <h3 className="font-semibold">Habilidades</h3>
+                                <div className="flex flex-wrap gap-2">
+                                  {candidateDetails.habilidades?.map((hab: string, i: number) => (
+                                    <Badge key={i} variant="secondary">{hab}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </ScrollArea>
+                      </DialogContent>
+                    </Dialog>
                   </TableCell>
                 </TableRow>
               ))}

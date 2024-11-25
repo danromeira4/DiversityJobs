@@ -751,3 +751,65 @@ async def update_applicant(email: str, applicant: ApplicantCreate):
             
         except sqlite3.Error as e:
             raise HTTPException(status_code=400, detail=str(e))
+        
+@app.get("/jobs/{job_id}/candidates")
+async def get_job_candidates(job_id: int):
+    with get_db() as conn:
+        cursor = conn.cursor()
+        
+        query = """
+        SELECT 
+            u.user_id as id,
+            u.name as name,
+            u.email as email,
+            a.application_date,
+            a.status
+        FROM Applications a
+        INNER JOIN Users u ON u.user_id = a.user_id
+        WHERE a.job_id = ?
+        ORDER BY a.application_date DESC
+        """
+        
+        try:
+            cursor.execute(query, (job_id,))
+            candidates = cursor.fetchall()
+            return [dict(candidate) for candidate in candidates]
+        except sqlite3.Error as e:
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.post("/applications/{job_id}/status")
+async def update_application_status(job_id: int, application: JobApplication, status: str):
+    """
+    Updates the status of a job application based on applicant email and job ID.
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+
+        try:
+            # Get the user_id from email
+            cursor.execute(
+                "SELECT user_id FROM Users WHERE email = ? AND user_type = 'applicant'",
+                (application.applicant_email,)
+            )
+            user = cursor.fetchone()
+            if not user:
+                raise HTTPException(status_code=404, detail="Applicant not found")
+
+            # Update the application status
+            update_query = """
+            UPDATE Applications 
+            SET status = ?
+            WHERE job_id = ? AND user_id = ?
+            """
+            cursor.execute(update_query, (status, job_id, user['user_id']))
+            
+            if cursor.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Application not found")
+            
+            conn.commit()
+            return {"message": "Application status updated successfully"}
+
+        except sqlite3.Error as e:
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
