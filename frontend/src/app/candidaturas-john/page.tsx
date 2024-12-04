@@ -40,7 +40,8 @@ export default function Candidaturas() {
   const [applications, setApplications] = useState<Application[]>([])
   const [error, setError] = useState('')
   const [selectedJob, setSelectedJob] = useState<JobDetails | null>(null)
-  const applicantEmail = "john@example.com" // Email fixo do candidato
+  const applicantEmail = "ana.souza1@email.com" // Email fixo do candidato
+  
 
   useEffect(() => {
     const fetchApplications = async () => {

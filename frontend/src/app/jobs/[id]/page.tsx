@@ -28,7 +28,9 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
   const router = useRouter()
 
   // Email fixo "john@example.com"
-  const applicantEmail = "john@example.com"
+  const applicantEmail = "ana.souza1@email.com"
+  //const applicantEmail = "carlos.lima@email.com"
+  //const applicantEmail = "joao.pereira@email.com"
 
   useEffect(() => {
     if (!resolvedParams.id) return

@@ -19,7 +19,8 @@ export default function DashboardEmpresa() {
   const [filtroNome, setFiltroNome] = useState("")
   const [filtroGruposSociais, setFiltroGruposSociais] = useState<string[]>([])
   const [vagasEmpresa, setVagasEmpresa] = useState([])
-  const businessEmail = "tech@company.com" // Email fixo do business
+  const businessEmail = "tech@company.com"
+  //const businessEmail = "retail@store.com" // Email fixo do business
   const [novaVaga, setNovaVaga] = useState({
     business_email: businessEmail,
     job_title: "",
